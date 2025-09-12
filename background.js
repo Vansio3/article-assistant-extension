@@ -18,7 +18,7 @@ function startSummarization(tab) {
   console.log(`Background: Starting summarization for tab ${tab.id}.`);
 
   chrome.sidePanel.open({ tabId: tab.id }).then(() => {
-    chrome.runtime.sendMessage({ action: "showLoading" });
+    chrome.runtime.sendMessage({ action: "showLoading" }).catch(() => {});
   });
 
   chrome.scripting.executeScript({
