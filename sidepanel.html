@@ -57,31 +57,71 @@
 
         <footer class="panel-footer">
             <!-- Summary Footer -->
+            <!-- sidepanel.html (UPDATED summary footer) -->
             <div id="summary-footer" class="footer-content active">
                 <div class="text-size-controls">
                     <button id="read-aloud-btn" class="size-control-button" title="Read summary aloud">
-                        <img src="speaker-icon.svg" class="play-icon" alt="Read Aloud">
-                        <img src="stop-icon.svg" class="stop-icon" alt="Stop Reading">
+                        <img src="icons/speaker-icon.svg" class="play-icon" alt="Read Aloud">
+                        <img src="icons/stop-icon.svg" class="stop-icon" alt="Stop Reading">
                     </button>
-                    <button id="decrease-text-size" class="size-control-button" title="Decrease text size">A-</button>
-                    <button id="increase-text-size" class="size-control-button" title="Increase text size">A+</button>
                 </div>
-                <button id="copy-button" class="action-button" title="Copy summary to clipboard">
-                    <span>Copy Summary</span>
-                </button>
+                <div class="right-controls">
+                    <button id="settings-btn" class="size-control-button" title="Settings">
+                        <img src="icons/settings-icon.svg" alt="Settings">
+                    </button>
+                    <button id="copy-button" class="size-control-button" title="Copy summary to clipboard">
+                        <img id="copy-button-icon" src="icons/copy-icon.svg" alt="Copy Summary">
+                    </button>
+                </div>
             </div>
             <!-- Chat Footer -->
             <div id="chat-footer" class="footer-content">
                 <form id="chat-form">
-                    <input type="text" id="chat-input" placeholder="Ask a question about the page..." autocomplete="off">
+                    <input type="text" id="chat-input" placeholder="Ask a question about the page..."
+                        autocomplete="off">
                     <button type="submit" id="chat-send-btn" title="Send message">
-                        <img src="send-icon.svg" alt="Send">
+                        <img src="icons/send-icon.svg" alt="Send">
                     </button>
                 </form>
             </div>
         </footer>
     </div>
     <script src="sidepanel.js"></script>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button id="close-settings-btn" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label for="voice-select">Voice</label>
+                    <select id="voice-select">
+                        <option>Loading voices...</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="speed-slider">Speed</label>
+                    <div class="slider-container">
+                        <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+                        <span id="speed-value">1.0x</span>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <label>Text Size</label>
+                    <div class="button-group-control">
+                        <button id="decrease-text-size" class="size-control-button">A-</button>
+                        <span id="text-size-value">Normal</span>
+                        <button id="increase-text-size" class="size-control-button">A+</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

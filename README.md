@@ -82,7 +82,14 @@ The "Article Assistant" extension should now appear in your extensions list and 
 ## 📁 File Structure
 
 ```
-/
+/article-assistant-extension
+|-- icons/
+|   |-- checkmark-icon.svg
+|   |-- copy-icon.svg
+|   |-- send-icon.svg
+|   |-- settings-icon.svg
+|   |-- speaker-icon.svg
+|   |-- stop-icon.svg
 |-- manifest.json         # Core extension configuration, permissions, and scripts.
 |-- config.js             # Your private configuration (API key, model name).
 |-- background.js         # Service worker; handles API calls and background tasks.

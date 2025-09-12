@@ -8,8 +8,7 @@
     "scripting",
     "sidePanel",
     "contextMenus",
-    "storage",
-    "tts"
+    "storage"
   ],
   "background": {
     "service_worker": "background.js",
@@ -24,9 +23,12 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "send-icon.svg",
-        "speaker-icon.svg",
-        "stop-icon.svg"
+        "icons/send-icon.svg",
+        "icons/speaker-icon.svg",
+        "icons/stop-icon.svg",
+        "icons/settings-icon.svg",
+        "icons/copy-icon.svg",
+        "icons/checkmark-icon.svg"
       ],
       "matches": ["<all_urls>"]
     }
