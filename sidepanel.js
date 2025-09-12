@@ -150,7 +150,7 @@ copyButton.addEventListener('click', () => {
 function applyTextSize(index) {
     const size = FONT_SIZES[index];
     summaryTextEl.style.fontSize = size;
-    chatHistoryEl.style.fontSize = size; // Apply to chat as well
+    chatHistoryEl.style.fontSize = size; 
 
     currentFontIndex = index;
     decreaseTextBtn.disabled = (index === 0);
