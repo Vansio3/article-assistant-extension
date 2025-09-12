@@ -1,6 +1,6 @@
 # Article Assistant Chrome Extension
 
-Supercharge your reading experience with this powerful Chrome extension. It uses the Google Gemini API to provide one-click AI-powered summaries of any web article and allows you to have an interactive conversation with the content.
+Supercharge your reading experience with this powerful Chrome extension. It uses the Google Gemini API to provide one-click AI-powered summaries of any web article and allows you to have an interactive, context-aware conversation with the content.
 
 ***
 
@@ -8,18 +8,23 @@ Supercharge your reading experience with this powerful Chrome extension. It uses
 
 *   **One-Click Summaries**: Instantly get a concise, easy-to-read summary of long articles directly in the Chrome side panel.
 *   **💬 Chat with the Page**: Switch to an interactive chat mode to ask specific questions about the article's content. The AI's knowledge is limited to the article, ensuring contextually accurate answers.
+*   **🔊 Read Aloud Functionality**: Listen to the article summary using the browser's built-in text-to-speech engine.
+*   **⚙️ Personalization Settings**:
+    *   **Voice Selection**: Choose from a list of available English voices for the "Read Aloud" feature.
+    *   **Speech Speed**: Adjust the playback speed to your preferred listening pace.
+    *   **Text Size**: Change the font size for both the summary and chat views for optimal readability.
 *   **🎨 Modern UI & UX**:
     *   Clean, intuitive interface that appears in the Chrome Side Panel.
     *   Full dark mode support (adapts to your system's theme).
-    *   Adjustable text size for improved readability.
-    *   Easy "Copy to Clipboard" functionality.
+    *   Sleek, theme-aware SVG icons for all controls.
+    *   Visual feedback for actions like copying text.
 *   **🚀 Efficient Content Extraction**: Uses Mozilla's robust `Readability.js` library to cleanly parse and extract article text, ignoring ads and clutter.
-*   **🔐 Secure & Private**: Your Google Gemini API key is stored locally in the extension's configuration and is never shared.
 
 ## 🛠️ Tech Stack
 
 *   **Platform**: Chrome Extension (Manifest V3)
 *   **AI Engine**: Google Gemini API (`e.g. gemini-2.5-flash-lite`)
+*   **Text-to-Speech**: Web Speech API (`window.speechSynthesis`)
 *   **Content Parsing**: Mozilla's `Readability.js`
 *   **Core Technologies**: HTML5, CSS3, JavaScript (ES Modules)
 *   **APIs**: `chrome.sidePanel`, `chrome.scripting`, `chrome.storage`, `chrome.contextMenus`
@@ -74,8 +79,9 @@ The "Article Assistant" extension should now appear in your extensions list and 
     *   Click the **Article Assistant icon** in your Chrome toolbar.
     *   **Right-click** anywhere on the page and select "Parse with Article Assistant" from the context menu.
 3.  The side panel will open and display the AI-generated summary.
-4.  **To ask questions**, click the **"Chat with Page"** button at the top of the side panel and use the input field at the bottom.
-5.  Use the **A- / A+** buttons to adjust the text size to your preference. This setting is saved for future use.
+4.  Click the **speaker icon** to have the summary read to you. Click it again to stop.
+5.  Click the **gear icon** to open the Settings modal, where you can adjust the voice, speech speed, and text size. Your preferences are saved automatically.
+6.  Click the **"Chat with Page"** tab to ask specific questions about the article.
 
 ## 📁 File Structure
 
@@ -88,14 +94,13 @@ The "Article Assistant" extension should now appear in your extensions list and 
 |   |-- settings-icon.svg
 |   |-- speaker-icon.svg
 |   |-- stop-icon.svg
-|-- manifest.json         # Core extension configuration, permissions, and scripts.
-|-- config.js             # Your private configuration (API key, model name).
-|-- background.js         # Service worker; handles API calls and background tasks.
-|-- content.js            # Injected into pages to extract content via Readability.js.
-|-- Readability.js        # The content parsing library from Mozilla.
-|-- sidepanel.html        # The main HTML structure for the side panel UI.
-|-- sidepanel.css         # All styles for the side panel, including dark mode.
-|-- sidepanel.js          # Handles all UI logic, state, and user interactions.
-|-- send-icon.svg         # Icon for the chat "send" button.
-|-- README.md             # You are here!
+|-- manifest.json           # Core extension configuration, permissions, and scripts.
+|-- background.js           # Service worker; handles API calls and background tasks.
+|-- content.js              # Injected into pages to extract content via Readability.js.
+|-- Readability.js          # The content parsing library from Mozilla.
+|-- sidepanel.html          # The main HTML structure for the side panel UI.
+|-- sidepanel.css           # All styles for the side panel, including dark mode.
+|-- sidepanel.js            # Handles all UI logic, state, and user interactions.
+|-- README.md               # You are here!
+|-- config.js.example       # Example configuration file for users to copy.
 ```
