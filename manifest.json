@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Article Assistant",
+  "version": "1.1",
+  "description": "Summarizes and chats with articles using the Gemini API.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "sidePanel",
+    "contextMenus",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Article Assistant"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["send-icon.svg"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

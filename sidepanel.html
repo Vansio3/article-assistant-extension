@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Article Assistant</title>
+    <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="panel-header">
+            <nav class="mode-switcher">
+                <button id="summary-mode-btn" class="mode-btn active" data-mode="summary">Summary</button>
+                <button id="chat-mode-btn" class="mode-btn" data-mode="chat" disabled>Chat with Page</button>
+            </nav>
+        </header>
+
+        <main class="content-area">
+            <!-- SUMMARY MODE CONTAINER -->
+            <div id="summary-mode-content" class="mode-content active">
+                <div id="content-container" class="welcome">
+                    <!-- Welcome View -->
+                    <div class="view welcome-view">
+                        <div class="icon">💡</div>
+                        <p>Click the extension icon to generate a summary of the current page.</p>
+                    </div>
+                    <!-- Loading View -->
+                    <div class="view loading-view">
+                        <div class="spinner"></div>
+                        <p>Reading the article and generating a summary...</p>
+                    </div>
+                    <!-- Summary (Success) View -->
+                    <div class="view summary-view">
+                        <h2 id="summary-title"></h2>
+                        <p id="summary-text"></p>
+                    </div>
+                    <!-- Error View -->
+                    <div class="view error-view">
+                        <div class="icon">⚠️</div>
+                        <h2 id="error-title">Oops!</h2>
+                        <p id="error-message">Something went wrong.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHAT MODE CONTAINER -->
+            <div id="chat-mode-content" class="mode-content">
+                <div id="chat-history">
+                    <!-- Chat messages will be appended here -->
+                </div>
+                <div id="chat-typing-indicator" class="message assistant">
+                    <div class="typing-dots"><span></span><span></span><span></span></div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="panel-footer">
+            <!-- Summary Footer -->
+            <div id="summary-footer" class="footer-content active">
+                 <div class="text-size-controls">
+                    <button id="decrease-text-size" class="size-control-button" title="Decrease text size">A-</button>
+                    <button id="increase-text-size" class="size-control-button" title="Increase text size">A+</button>
+                </div>
+                <button id="copy-button" class="action-button" title="Copy summary to clipboard">
+                    <span>Copy Summary</span>
+                </button>
+            </div>
+            <!-- Chat Footer -->
+            <div id="chat-footer" class="footer-content">
+                <form id="chat-form">
+                    <input type="text" id="chat-input" placeholder="Ask a question about the page..." autocomplete="off">
+                    <button type="submit" id="chat-send-btn" title="Send message">
+                        <img src="send-icon.svg" alt="Send">
+                    </button>
+                </form>
+            </div>
+        </footer>
+    </div>
+    <script src="sidepanel.js"></script>
+</body>
+</html>
