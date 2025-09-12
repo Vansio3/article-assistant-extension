@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Article Assistant</title>
     <link rel="stylesheet" href="sidepanel.css">
 </head>
+
 <body>
     <div class="app-container">
         <header class="panel-header">
@@ -56,7 +58,11 @@
         <footer class="panel-footer">
             <!-- Summary Footer -->
             <div id="summary-footer" class="footer-content active">
-                 <div class="text-size-controls">
+                <div class="text-size-controls">
+                    <button id="read-aloud-btn" class="size-control-button" title="Read summary aloud">
+                        <img src="speaker-icon.svg" class="play-icon" alt="Read Aloud">
+                        <img src="stop-icon.svg" class="stop-icon" alt="Stop Reading">
+                    </button>
                     <button id="decrease-text-size" class="size-control-button" title="Decrease text size">A-</button>
                     <button id="increase-text-size" class="size-control-button" title="Increase text size">A+</button>
                 </div>
@@ -77,4 +83,5 @@
     </div>
     <script src="sidepanel.js"></script>
 </body>
+
 </html>

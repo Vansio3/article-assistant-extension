@@ -3,16 +3,16 @@
 // --- GLOBAL STATE & ELEMENTS ---
 let conversationHistory = [];
 let summaryTextContent = '';
+let isReading = false;
+let googleVoice = null; // To store the selected Google voice object
 
-// Mode switching elements
+// (All your element selectors remain the same)
 const summaryModeBtn = document.getElementById('summary-mode-btn');
 const chatModeBtn = document.getElementById('chat-mode-btn');
 const summaryContent = document.getElementById('summary-mode-content');
 const chatContent = document.getElementById('chat-mode-content');
 const summaryFooter = document.getElementById('summary-footer');
 const chatFooter = document.getElementById('chat-footer');
-
-// Summary view elements
 const contentContainer = document.getElementById('content-container');
 const summaryTitleEl = document.getElementById('summary-title');
 const summaryTextEl = document.getElementById('summary-text');
@@ -20,23 +20,86 @@ const errorTitleEl = document.getElementById('error-title');
 const errorMessageEl = document.getElementById('error-message');
 const copyButton = document.getElementById('copy-button');
 const copyButtonText = copyButton.querySelector('span');
-
-// Chat view elements
 const chatHistoryEl = document.getElementById('chat-history');
 const chatForm = document.getElementById('chat-form');
 const chatInput = document.getElementById('chat-input');
 const chatSendBtn = document.getElementById('chat-send-btn');
 const typingIndicator = document.getElementById('chat-typing-indicator');
-
-// Text size elements
 const decreaseTextBtn = document.getElementById('decrease-text-size');
 const increaseTextBtn = document.getElementById('increase-text-size');
 const FONT_SIZES = ['12px', '14px', '16px', '18px', '20px'];
 const DEFAULT_FONT_INDEX = 2;
 let currentFontIndex = DEFAULT_FONT_INDEX;
+const readAloudBtn = document.getElementById('read-aloud-btn');
+
+
+// --- TTS (READ ALOUD) LOGIC using window.speechSynthesis ---
+
+/**
+ * Finds and sets a Google English voice from the available system voices.
+ * This is asynchronous, so it needs to be called when the voice list is ready.
+ */
+function loadAndSetGoogleVoice() {
+    function findVoice() {
+        const voices = window.speechSynthesis.getVoices();
+        // Find a voice where the name includes 'Google' and the language starts with 'en-'
+        googleVoice = voices.find(voice => voice.name.includes('Google') && voice.lang.startsWith('en-')) || null;
+        if(googleVoice) {
+            console.log("Found Google voice:", googleVoice.name);
+        } else {
+            console.log("Google voice not found, will use default.");
+        }
+    }
+
+    // The 'voiceschanged' event fires when the browser has loaded the list of voices.
+    window.speechSynthesis.onvoiceschanged = findVoice;
+    
+    // Call it once immediately in case the voices are already loaded.
+    findVoice();
+}
+
+function stopReading() {
+    window.speechSynthesis.cancel();
+    resetReadingState();
+}
+
+function resetReadingState() {
+    isReading = false;
+    readAloudBtn.classList.remove('reading');
+    readAloudBtn.disabled = summaryTextContent.length === 0;
+}
+
+readAloudBtn.addEventListener('click', () => {
+    if (isReading || window.speechSynthesis.speaking) {
+        stopReading();
+    } else if (summaryTextContent) {
+        const utterance = new SpeechSynthesisUtterance(summaryTextContent);
+
+        // Assign the selected Google voice if it was found
+        if (googleVoice) {
+            utterance.voice = googleVoice;
+        }
+
+        utterance.onend = function() {
+            resetReadingState();
+        };
+        utterance.onerror = function(event) {
+            console.error('SpeechSynthesisUtterance.onerror', event);
+            resetReadingState();
+        };
+
+        window.speechSynthesis.speak(utterance);
+        isReading = true;
+        readAloudBtn.classList.add('reading');
+    }
+});
+
 
 // --- MODE SWITCHING ---
 function switchMode(mode) {
+    if (mode === 'chat') {
+        stopReading();
+    }
     const isSummary = mode === 'summary';
     summaryModeBtn.classList.toggle('active', isSummary);
     chatModeBtn.classList.toggle('active', !isSummary);
@@ -48,19 +111,17 @@ function switchMode(mode) {
 summaryModeBtn.addEventListener('click', () => switchMode('summary'));
 chatModeBtn.addEventListener('click', () => switchMode('chat'));
 
+
 // --- CHAT LOGIC ---
 chatForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const userInput = chatInput.value.trim();
     if (!userInput) return;
-
     conversationHistory.push({ role: 'user', parts: [{ text: userInput }] });
     appendMessage('user', userInput);
-
     chatInput.value = '';
     chatSendBtn.disabled = true;
     showTypingIndicator(true);
-
     chrome.runtime.sendMessage({ action: 'chatWithPage', history: conversationHistory });
 });
 
@@ -83,7 +144,8 @@ chatInput.addEventListener('input', () => {
     chatSendBtn.disabled = chatInput.value.trim().length === 0;
 });
 
-// --- SUMMARY & STATE LOGIC ---
+
+// --- SUMMARY VIEW STATE LOGIC ---
 function setState(state, data = {}) {
     contentContainer.className = state;
     switch (state) {
@@ -97,31 +159,40 @@ function setState(state, data = {}) {
             errorTitleEl.textContent = data.title || 'Oops!';
             errorMessageEl.textContent = data.message;
             copyButton.disabled = true;
+            summaryTextContent = '';
             break;
         case 'loading':
         case 'welcome':
             copyButton.disabled = true;
+            summaryTextContent = '';
             break;
     }
 }
+
 
 // --- MESSAGE LISTENER FROM BACKGROUND ---
 chrome.runtime.onMessage.addListener((request) => {
     switch (request.action) {
         case 'displaySummary':
+            stopReading();
             setState('summary', { title: request.title, summary: request.summary });
             chatModeBtn.disabled = false;
+            readAloudBtn.disabled = false;
             conversationHistory = [];
             chatHistoryEl.innerHTML = '';
             break;
         case 'displayError':
+            stopReading();
             setState('error', { title: request.title, message: request.message });
             chatModeBtn.disabled = true;
+            readAloudBtn.disabled = true;
             break;
         case 'showLoading':
+            stopReading();
             setState('loading');
             switchMode('summary');
             chatModeBtn.disabled = true;
+            readAloudBtn.disabled = true;
             break;
         case 'displayChatResponse':
             showTypingIndicator(false);
@@ -137,6 +208,7 @@ chrome.runtime.onMessage.addListener((request) => {
     }
 });
 
+
 // --- FOOTER CONTROLS (COPY & TEXT SIZE) ---
 copyButton.addEventListener('click', () => {
     if (summaryTextContent) {
@@ -150,8 +222,7 @@ copyButton.addEventListener('click', () => {
 function applyTextSize(index) {
     const size = FONT_SIZES[index];
     summaryTextEl.style.fontSize = size;
-    chatHistoryEl.style.fontSize = size; 
-
+    chatHistoryEl.style.fontSize = size;
     currentFontIndex = index;
     decreaseTextBtn.disabled = (index === 0);
     increaseTextBtn.disabled = (index === FONT_SIZES.length - 1);
@@ -173,14 +244,19 @@ decreaseTextBtn.addEventListener('click', () => {
     }
 });
 
+
 // --- INITIALIZATION ---
 function initialize() {
     chrome.storage.local.get(['textSizeIndex'], (result) => {
         const savedIndex = result.textSizeIndex;
         applyTextSize(typeof savedIndex === 'number' ? savedIndex : DEFAULT_FONT_INDEX);
     });
+
+    loadAndSetGoogleVoice(); // Attempt to find the premium voice
+    
     setState('welcome');
     chatSendBtn.disabled = true;
+    readAloudBtn.disabled = true;
 }
 
 initialize();
