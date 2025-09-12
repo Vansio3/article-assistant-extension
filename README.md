@@ -1,7 +1,5 @@
 # Article Assistant Chrome Extension
 
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)![Version](https://img.shields.io/badge/Version-1.2.0-blue)![Chrome](https://img.shields.io/badge/Platform-Chrome-brightgreen)
-
 Supercharge your reading experience with this powerful Chrome extension. It uses the Google Gemini API to provide one-click AI-powered summaries of any web article and allows you to have an interactive conversation with the content.
 
 ***
@@ -101,17 +99,3 @@ The "Article Assistant" extension should now appear in your extensions list and 
 |-- send-icon.svg         # Icon for the chat "send" button.
 |-- README.md             # You are here!
 ```
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have ideas for improvements or find any bugs, feel free to open an issue or submit a pull request.
-
-1.  Fork the Project
-2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4.  Push to the Branch (`git push origin feature/AmazingFeature`)
-5.  Open a Pull Request
-
-## 📜 License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
