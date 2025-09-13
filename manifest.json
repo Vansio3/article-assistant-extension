@@ -30,7 +30,7 @@
         "icons/copy-icon.svg",
         "icons/checkmark-icon.svg",
         "icons/globe-icon.svg",
-        "marked.min.js"
+        "lib/marked.min.js"
       ],
       "matches": ["<all_urls>"]
     }

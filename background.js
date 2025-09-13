@@ -24,7 +24,7 @@ function startSummarization(tab) {
 
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ["Readability.js", "content.js"]
+    files: ["lib/Readability.js", "content.js"]
   }, () => {
     if (chrome.runtime.lastError) {
       console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
