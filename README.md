@@ -90,6 +90,9 @@ The "Article Assistant" extension should now appear in your extensions list and 
 |   |-- settings-icon.svg
 |   |-- speaker-icon.svg
 |   |-- stop-icon.svg
+|   |-- logo-16.png
+|   |-- logo-48.png
+|   |-- logo-128.png
 |-- lib/
 |   |-- Readability.js        # The content parsing library from Mozilla.
 |   |-- marked.min.js         # A Markdown parser and compiler.

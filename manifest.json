@@ -10,12 +10,21 @@
     "contextMenus",
     "storage"
   ],
+  "icons": {
+    "16": "icons/logo-16.png",
+    "48": "icons/logo-48.png",
+    "128": "icons/logo-128.png"
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "action": {
-    "default_title": "Article Assistant"
+    "default_title": "Article Assistant",
+    "default_icon": {
+      "16": "icons/logo-16.png",
+      "48": "icons/logo-48.png"
+    }
   },
   "side_panel": {
     "default_path": "sidepanel.html"
