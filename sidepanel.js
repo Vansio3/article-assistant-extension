@@ -43,10 +43,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
-        { size: '14px', name: 'Small' },
-        { size: '16px', name: 'Normal' },
-        { size: '18px', name: 'Large' },
-        { size: '20px', name: 'Largest' }
+        { size: '13px', name: 'Small' },
+        { size: '14px', name: 'Normal' },
+        { size: '16px', name: 'Large' },
+        { size: '18px', name: 'Largest' }
     ];
     const DEFAULT_FONT_INDEX = 2;
     let currentFontIndex = DEFAULT_FONT_INDEX;
