@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    chrome.runtime.onMessage.addListener((request) => {
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         switch (request.action) {
             case 'displaySummary':
                 stopReading();
@@ -237,11 +237,33 @@ document.addEventListener('DOMContentLoaded', () => {
                 internetToggleBtn.title = "Enable internet access (general knowledge)";
                 chatInput.placeholder = "Ask a question about the page...";
                 break;
-            case 'displayError': stopReading(); setState('error', { title: request.title, message: request.message }); chatModeBtn.disabled = true; readAloudBtn.disabled = true; break;
-            case 'showLoading': stopReading(); setState('loading'); switchMode('summary'); chatModeBtn.disabled = true; readAloudBtn.disabled = true; break;
-            case 'displayChatResponse': showTypingIndicator(false); chatSendBtn.disabled = false; conversationHistory.push({ role: 'model', parts: [{ text: request.message }] }); appendMessage('assistant', request.message); break;
-            case 'displayChatError': showTypingIndicator(false); chatSendBtn.disabled = false; appendMessage('assistant', `Error: ${request.message}`); break;
+            case 'displayError':
+                stopReading();
+                setState('error', { title: request.title, message: request.message });
+                chatModeBtn.disabled = true;
+                readAloudBtn.disabled = true;
+                break;
+            case 'showLoading':
+                stopReading();
+                setState('loading');
+                switchMode('summary');
+                chatModeBtn.disabled = true;
+                readAloudBtn.disabled = true;
+                break;
+            case 'displayChatResponse':
+                showTypingIndicator(false);
+                chatSendBtn.disabled = false;
+                conversationHistory.push({ role: 'model', parts: [{ text: request.message }] });
+                appendMessage('assistant', request.message);
+                break;
+            case 'displayChatError':
+                showTypingIndicator(false);
+                chatSendBtn.disabled = false;
+                appendMessage('assistant', `Error: ${request.message}`);
+                break;
         }
+        // Acknowledge receipt of the message to prevent the sender from retrying.
+        sendResponse({ received: true });
     });
 
     function applyTextSize(index) {

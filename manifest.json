@@ -26,6 +26,14 @@
       "48": "icons/logo-48.png"
     }
   },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Alt+S"
+      },
+      "description": "Start summarization"
+    }
+  },
   "side_panel": {
     "default_path": "sidepanel.html"
   },

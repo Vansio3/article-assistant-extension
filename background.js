@@ -14,13 +14,31 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+// Sends a message to the side panel, retrying if the panel is not yet ready.
+function showLoadingScreen() {
+  let retries = 0;
+  const maxRetries = 10;
+  const attempt = () => {
+    if (retries >= maxRetries) {
+      console.error("Could not connect to side panel to show loading screen.");
+      return;
+    }
+    chrome.runtime.sendMessage({ action: "showLoading" }, (response) => {
+      if (chrome.runtime.lastError) {
+        retries++;
+        setTimeout(attempt, 100); // Retry after 100ms
+      }
+    });
+  };
+  attempt();
+}
+
 function startSummarization(tab) {
   currentArticleContext = null; // Reset context on new summarization request
   console.log(`Background: Starting summarization for tab ${tab.id}.`);
 
-  chrome.sidePanel.open({ tabId: tab.id }).then(() => {
-    chrome.runtime.sendMessage({ action: "showLoading" }).catch(() => {});
-  });
+  chrome.sidePanel.open({ tabId: tab.id });
+  showLoadingScreen();
 
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
