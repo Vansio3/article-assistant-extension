@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GLOBAL STATE & ELEMENTS ---
     let conversationHistory = [];
-    let summaryTextContent = ''; // Stores the raw Markdown text
+    let summaryTextContent = ''; // Stores the raw Markdown text for copying
+    let summaryPlainText = '';   // Stores the plain text version for speech
     let isReading = false;
     let availableVoices = [];
     let speechQueue = [];
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     const DEFAULT_FONT_INDEX = 2;
     let currentFontIndex = DEFAULT_FONT_INDEX;
-    
+
     // --- EVENT LISTENERS & LOGIC ---
 
     copyButton.addEventListener('click', () => {
@@ -57,10 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
             navigator.clipboard.writeText(summaryTextContent).then(() => {
                 const originalIcon = 'icons/copy-icon.svg';
                 const successIcon = 'icons/checkmark-icon.svg';
-
                 copyButtonIcon.src = successIcon;
                 copyButton.title = "Copied!";
-
                 setTimeout(() => {
                     copyButtonIcon.src = originalIcon;
                     copyButton.title = "Copy summary to clipboard";
@@ -121,11 +120,14 @@ document.addEventListener('DOMContentLoaded', () => {
             window.speechSynthesis.speak(utterance);
         });
     }
+
     readAloudBtn.addEventListener('click', () => {
-        if (isReading || window.speechSynthesis.speaking) { stopReading(); }
-        else if (summaryTextContent) {
+        if (isReading || window.speechSynthesis.speaking) {
+            stopReading();
+        } else if (summaryPlainText) { // THIS IS THE CORRECTED CONDITION
             const regex = /[^.!?]+[.!?]+/g;
-            speechQueue = (summaryTextContent.match(regex) || [summaryTextContent]).filter(chunk => chunk.trim().length > 0);
+            // THE BUG IS FIXED HERE: We now use summaryPlainText, not summaryTextContent.
+            speechQueue = (summaryPlainText.match(regex) || [summaryPlainText]).filter(chunk => chunk.trim().length > 0);
             currentSpeechIndex = 0;
             if (speechQueue.length > 0) { isReading = true; readAloudBtn.classList.add('reading'); playNextChunk(); }
         }
@@ -159,8 +161,15 @@ document.addEventListener('DOMContentLoaded', () => {
         contentContainer.className = state;
         switch (state) {
             case 'summary':
-                summaryTextContent = data.summary; // Store raw markdown for copy/speech
-                summaryTextEl.innerHTML = marked.parse(data.summary); // Parse and render markdown
+                summaryTextContent = data.summary; // Store raw markdown for copy
+                const parsedHtml = marked.parse(data.summary);
+                summaryTextEl.innerHTML = parsedHtml; // Render HTML for display
+
+                // Create a plain text version for speech synthesis by stripping HTML tags
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = parsedHtml;
+                summaryPlainText = tempDiv.textContent || tempDiv.innerText || '';
+
                 copyButton.disabled = false;
                 break;
             case 'error':
@@ -168,11 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMessageEl.textContent = data.message;
                 copyButton.disabled = true;
                 summaryTextContent = '';
+                summaryPlainText = ''; // Reset plain text version
                 break;
             case 'loading':
             case 'welcome':
                 copyButton.disabled = true;
                 summaryTextContent = '';
+                summaryPlainText = ''; // Reset plain text version
                 break;
         }
     }

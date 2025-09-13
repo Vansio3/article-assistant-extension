@@ -1,5 +1,6 @@
 // background.js
 import { config } from './config.js';
+import { getSummarizePrompt, getChatSystemPrompt } from './prompts.js';
 
 // Global variable to hold the context of the currently summarized article
 let currentArticleContext = null;
@@ -70,10 +71,11 @@ async function summarizeWithGemini(article) {
   }
 
   try {
+    const prompt = getSummarizePrompt(article.title, article.content);
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ "contents": [{ "parts": [{ "text": `Provide a concise, easy-to-read summary of the following article in a few paragraphs. Use Markdown for formatting (e.g., headings, bold text, bullet points) to improve readability.\n\nTitle: ${article.title}\n\n${article.content}` }] }] })
+      body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
     });
     const data = await response.json();
     if (!response.ok || !data.candidates) {
@@ -91,9 +93,10 @@ async function chatWithGemini(history, article) {
   const apiKey = config.GEMINI_API_KEY;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+  const systemPrompt = getChatSystemPrompt(article.title, article.content);
 
   const contents = [
-    { "role": "user", "parts": [{ "text": `You are a helpful assistant. I will provide you with an article, and you will answer my questions based *only* on the information within that article. Do not use external knowledge. Format your answers using Markdown. Here is the article:\n\n---\n\nTITLE: ${article.title}\n\nCONTENT: ${article.content}\n\n---` }] },
+    { "role": "user", "parts": [{ "text": systemPrompt }] },
     { "role": "model", "parts": [{ "text": "Okay, I have read the article. I will only use the provided text to answer and format my responses in Markdown. What would you like to know?" }] },
     ...history
   ];

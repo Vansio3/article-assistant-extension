@@ -28,9 +28,8 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 /* 4. Summary View & States */
 .view { display: none; flex-direction: column; align-items: center; text-align: center; height: 100%; justify-content: center; }
 #content-container.welcome .welcome-view, #content-container.loading .loading-view, #content-container.summary .summary-view, #content-container.error .error-view { display: flex; }
-.summary-view { align-items: flex-start; text-align: left; justify-content: flex-start; }
-#summary-title { margin-top: 0; font-size: 18px; width: 100%; }
-#summary-text { white-space: pre-wrap; transition: font-size 0.2s ease-in-out; }
+.summary-view { align-items: flex-start; text-align: left; justify-content: flex-start; width: 100%; }
+#summary-text { width: 100%; }
 .icon { font-size: 32px; background-color: var(--icon-bg); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
 .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -193,42 +192,50 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
     transition: transform 0.2s ease-in-out; /* Add a little transition for effect */
 }
 
-/* 13. Markdown Content Styling */
+/* 13. Markdown Content Styling (REVISED for Compactness) */
 #summary-text, .message.assistant {
     line-height: 1.6;
 }
 
-#summary-text *:last-child,
-.message.assistant *:last-child {
-    margin-bottom: 0;
+/* First, reset all margins for elements inside the markdown containers */
+#summary-text > *,
+.message.assistant > * {
+    margin: 0;
 }
 
-#summary-text p, .message.assistant p { margin: 0 0 1em; }
-
-#summary-text h1, #summary-text h2, #summary-text h3, #summary-text h4,
-.message.assistant h1, .message.assistant h2, .message.assistant h3, .message.assistant h4 {
-    margin: 1.2em 0 0.6em;
+/* Then, add a consistent top margin to every element EXCEPT the first one. */
+/* This creates a predictable gap between elements without compounding. */
+#summary-text > * + *,
+.message.assistant > * + * {
+    margin-top: 0.75em;
 }
+
+/* --- Other Markdown styles --- */
 
 #summary-text ul, #summary-text ol,
 .message.assistant ul, .message.assistant ol {
     padding-left: 22px;
-    margin-bottom: 1em;
 }
 
-#summary-text li, .message.assistant li { margin-bottom: 0.4em; }
+/* Add a smaller gap between list items for better readability */
+#summary-text li + li,
+.message.assistant li + li {
+    margin-top: 0.25em;
+}
 
 #summary-text a, .message.assistant a {
     color: var(--primary-color);
     text-decoration: none;
 }
-#summary-text a:hover, .message.assistant a:hover { text-decoration: underline; }
+#summary-text a:hover, .message.assistant a:hover {
+    text-decoration: underline;
+}
 
 #summary-text code, .message.assistant code {
-  background-color: var(--icon-bg);
-  padding: 0.2em 0.4em;
-  font-size: 85%;
-  border-radius: 6px;
+    background-color: var(--icon-bg);
+    padding: 0.2em 0.4em;
+    font-size: 85%;
+    border-radius: 6px;
 }
 
 #summary-text blockquote, .message.assistant blockquote {
@@ -236,5 +243,4 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
     color: var(--text-color);
     opacity: 0.8;
     border-left: 0.25em solid var(--border-color);
-    margin: 0 0 1em;
 }
