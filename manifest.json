@@ -29,6 +29,7 @@
         "icons/settings-icon.svg",
         "icons/copy-icon.svg",
         "icons/checkmark-icon.svg",
+        "icons/globe-icon.svg",
         "marked.min.js"
       ],
       "matches": ["<all_urls>"]

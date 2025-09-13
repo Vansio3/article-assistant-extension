@@ -58,3 +58,31 @@ Format all your responses using Markdown.
 </article>
 `;
 }
+
+/**
+ * Generates a system prompt for a chat that can use both article context and general knowledge.
+ * @param {string} title - The title of the article.
+ * @param {string} content - The text content of the article.
+ * @returns {string} The system prompt for the Gemini API.
+ */
+export function getHybridChatSystemPrompt(title, content) {
+  return `
+**Persona:** You are a helpful and knowledgeable AI assistant.
+
+**Core Directive:** You have been provided with the text of an article. Your task is to answer the user's questions.
+- If a question seems to be about the provided article, you **must prioritize** information from the article text to answer it.
+- If a question is general or not covered in the article, use your external knowledge to provide a comprehensive answer.
+- You can use both sources to formulate an answer if a question requires it.
+
+**Output Format:**
+Format all your responses using Markdown.
+
+**Source Article:**
+<article>
+  <title>${title}</title>
+  <content>
+    ${content}
+  </content>
+</article>
+`;
+}

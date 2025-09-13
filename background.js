@@ -1,6 +1,6 @@
 // background.js
 import { config } from './config.js';
-import { getSummarizePrompt, getChatSystemPrompt } from './prompts.js';
+import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt } from './prompts.js';
 
 // Global variable to hold the context of the currently summarized article
 let currentArticleContext = null;
@@ -55,7 +55,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       chrome.runtime.sendMessage({ action: "displayChatError", message: "Article context not found. Please summarize a page first." });
       return;
     }
-    chatWithGemini(request.history, currentArticleContext);
+    chatWithGemini(request.history, currentArticleContext, request.internetAccess);
     return true; // Indicates async response
   }
 });
@@ -89,15 +89,25 @@ async function summarizeWithGemini(article) {
   }
 }
 
-async function chatWithGemini(history, article) {
+async function chatWithGemini(history, article, internetAccessEnabled) {
   const apiKey = config.GEMINI_API_KEY;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-  const systemPrompt = getChatSystemPrompt(article.title, article.content);
+  
+  let systemPrompt;
+  let initialModelResponse;
+
+  if (internetAccessEnabled) {
+    systemPrompt = getHybridChatSystemPrompt(article.title, article.content);
+    initialModelResponse = "Okay, I have read the article. I can now answer questions about it or use my general knowledge. How can I help you?";
+  } else {
+    systemPrompt = getChatSystemPrompt(article.title, article.content);
+    initialModelResponse = "Okay, I have read the article. I will only use the provided text to answer and format my responses in Markdown. What would you like to know?";
+  }
 
   const contents = [
     { "role": "user", "parts": [{ "text": systemPrompt }] },
-    { "role": "model", "parts": [{ "text": "Okay, I have read the article. I will only use the provided text to answer and format my responses in Markdown. What would you like to know?" }] },
+    { "role": "model", "parts": [{ "text": initialModelResponse }] },
     ...history
   ];
 

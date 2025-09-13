@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let availableVoices = [];
     let speechQueue = [];
     let currentSpeechIndex = 0;
+    let isInternetSearchEnabled = false;
 
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
@@ -40,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const decreaseTextBtn = document.getElementById('decrease-text-size');
     const increaseTextBtn = document.getElementById('increase-text-size');
     const textSizeValueEl = document.getElementById('text-size-value');
+    const internetToggleBtn = document.getElementById('internet-toggle-btn');
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
@@ -73,6 +75,29 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsBtn.addEventListener('click', openSettingsModal);
     closeSettingsBtn.addEventListener('click', closeSettingsModal);
     modalOverlay.addEventListener('click', closeSettingsModal);
+
+    function appendSystemMessage(text) {
+        const systemMessageDiv = document.createElement('div');
+        systemMessageDiv.classList.add('system-message');
+        systemMessageDiv.textContent = text;
+        chatHistoryEl.appendChild(systemMessageDiv);
+        chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight;
+    }
+
+    internetToggleBtn.addEventListener('click', () => {
+        isInternetSearchEnabled = !isInternetSearchEnabled;
+        internetToggleBtn.classList.toggle('active', isInternetSearchEnabled);
+        
+        if (isInternetSearchEnabled) {
+            internetToggleBtn.title = "Disable general knowledge.";
+            chatInput.placeholder = "Ask anything (uses general knowledge)...";
+            appendSystemMessage('General knowledge access enabled.');
+        } else {
+            internetToggleBtn.title = "Enable general knowledge.";
+            chatInput.placeholder = "Ask a question about the page...";
+            appendSystemMessage('Chat switched to article context only.');
+        }
+    });
 
     function populateVoiceList() {
         availableVoices = window.speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('en-'));
@@ -124,9 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
     readAloudBtn.addEventListener('click', () => {
         if (isReading || window.speechSynthesis.speaking) {
             stopReading();
-        } else if (summaryPlainText) { // THIS IS THE CORRECTED CONDITION
+        } else if (summaryPlainText) {
             const regex = /[^.!?]+[.!?]+/g;
-            // THE BUG IS FIXED HERE: We now use summaryPlainText, not summaryTextContent.
             speechQueue = (summaryPlainText.match(regex) || [summaryPlainText]).filter(chunk => chunk.trim().length > 0);
             currentSpeechIndex = 0;
             if (speechQueue.length > 0) { isReading = true; readAloudBtn.classList.add('reading'); playNextChunk(); }
@@ -140,7 +164,21 @@ document.addEventListener('DOMContentLoaded', () => {
     summaryModeBtn.addEventListener('click', () => switchMode('summary'));
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
 
-    chatForm.addEventListener('submit', (e) => { e.preventDefault(); const userInput = chatInput.value.trim(); if (!userInput) return; conversationHistory.push({ role: 'user', parts: [{ text: userInput }] }); appendMessage('user', userInput); chatInput.value = ''; chatSendBtn.disabled = true; showTypingIndicator(true); chrome.runtime.sendMessage({ action: 'chatWithPage', history: conversationHistory }); });
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const userInput = chatInput.value.trim();
+        if (!userInput) return;
+        conversationHistory.push({ role: 'user', parts: [{ text: userInput }] });
+        appendMessage('user', userInput);
+        chatInput.value = '';
+        chatSendBtn.disabled = true;
+        showTypingIndicator(true);
+        chrome.runtime.sendMessage({
+            action: 'chatWithPage',
+            history: conversationHistory,
+            internetAccess: isInternetSearchEnabled
+        });
+    });
     
     function appendMessage(role, text) {
         const messageDiv = document.createElement('div');
@@ -161,15 +199,12 @@ document.addEventListener('DOMContentLoaded', () => {
         contentContainer.className = state;
         switch (state) {
             case 'summary':
-                summaryTextContent = data.summary; // Store raw markdown for copy
+                summaryTextContent = data.summary;
                 const parsedHtml = marked.parse(data.summary);
-                summaryTextEl.innerHTML = parsedHtml; // Render HTML for display
-
-                // Create a plain text version for speech synthesis by stripping HTML tags
+                summaryTextEl.innerHTML = parsedHtml;
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = parsedHtml;
                 summaryPlainText = tempDiv.textContent || tempDiv.innerText || '';
-
                 copyButton.disabled = false;
                 break;
             case 'error':
@@ -177,20 +212,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorMessageEl.textContent = data.message;
                 copyButton.disabled = true;
                 summaryTextContent = '';
-                summaryPlainText = ''; // Reset plain text version
+                summaryPlainText = '';
                 break;
             case 'loading':
             case 'welcome':
                 copyButton.disabled = true;
                 summaryTextContent = '';
-                summaryPlainText = ''; // Reset plain text version
+                summaryPlainText = '';
                 break;
         }
     }
 
     chrome.runtime.onMessage.addListener((request) => {
         switch (request.action) {
-            case 'displaySummary': stopReading(); setState('summary', { summary: request.summary }); chatModeBtn.disabled = false; readAloudBtn.disabled = false; conversationHistory = []; chatHistoryEl.innerHTML = ''; break;
+            case 'displaySummary':
+                stopReading();
+                setState('summary', { summary: request.summary });
+                chatModeBtn.disabled = false;
+                readAloudBtn.disabled = false;
+                conversationHistory = [];
+                chatHistoryEl.innerHTML = '';
+                isInternetSearchEnabled = false;
+                internetToggleBtn.classList.remove('active');
+                internetToggleBtn.title = "Enable internet access (general knowledge)";
+                chatInput.placeholder = "Ask a question about the page...";
+                break;
             case 'displayError': stopReading(); setState('error', { title: request.title, message: request.message }); chatModeBtn.disabled = true; readAloudBtn.disabled = true; break;
             case 'showLoading': stopReading(); setState('loading'); switchMode('summary'); chatModeBtn.disabled = true; readAloudBtn.disabled = true; break;
             case 'displayChatResponse': showTypingIndicator(false); chatSendBtn.disabled = false; conversationHistory.push({ role: 'model', parts: [{ text: request.message }] }); appendMessage('assistant', request.message); break;
