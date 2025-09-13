@@ -20,7 +20,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const summaryFooter = document.getElementById('summary-footer');
     const chatFooter = document.getElementById('chat-footer');
     const contentContainer = document.getElementById('content-container');
-    const summaryTitleEl = document.getElementById('summary-title');
     const summaryTextEl = document.getElementById('summary-text');
     const errorTitleEl = document.getElementById('error-title');
     const errorMessageEl = document.getElementById('error-message');
@@ -160,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
         contentContainer.className = state;
         switch (state) {
             case 'summary':
-                summaryTitleEl.textContent = data.title;
                 summaryTextContent = data.summary; // Store raw markdown for copy/speech
                 summaryTextEl.innerHTML = marked.parse(data.summary); // Parse and render markdown
                 copyButton.disabled = false;
@@ -181,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.runtime.onMessage.addListener((request) => {
         switch (request.action) {
-            case 'displaySummary': stopReading(); setState('summary', { title: request.title, summary: request.summary }); chatModeBtn.disabled = false; readAloudBtn.disabled = false; conversationHistory = []; chatHistoryEl.innerHTML = ''; break;
+            case 'displaySummary': stopReading(); setState('summary', { summary: request.summary }); chatModeBtn.disabled = false; readAloudBtn.disabled = false; conversationHistory = []; chatHistoryEl.innerHTML = ''; break;
             case 'displayError': stopReading(); setState('error', { title: request.title, message: request.message }); chatModeBtn.disabled = true; readAloudBtn.disabled = true; break;
             case 'showLoading': stopReading(); setState('loading'); switchMode('summary'); chatModeBtn.disabled = true; readAloudBtn.disabled = true; break;
             case 'displayChatResponse': showTypingIndicator(false); chatSendBtn.disabled = false; conversationHistory.push({ role: 'model', parts: [{ text: request.message }] }); appendMessage('assistant', request.message); break;

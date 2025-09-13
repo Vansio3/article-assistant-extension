@@ -80,7 +80,7 @@ async function summarizeWithGemini(article) {
         throw new Error(data?.error?.message || "Invalid API response.");
     }
     const summary = data.candidates[0].content.parts[0].text;
-    chrome.runtime.sendMessage({ action: "displaySummary", title: article.title, summary: summary });
+    chrome.runtime.sendMessage({ action: "displaySummary", summary: summary });
   } catch (error) {
     console.error("Background: Summarize API failed.", error);
     chrome.runtime.sendMessage({ action: "displayError", title: "API Error", message: error.message });
