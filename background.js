@@ -73,7 +73,7 @@ async function summarizeWithGemini(article) {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ "contents": [{ "parts": [{ "text": `Provide a concise, easy-to-read summary of the following article in a few paragraphs:\n\nTitle: ${article.title}\n\n${article.content}` }] }] })
+      body: JSON.stringify({ "contents": [{ "parts": [{ "text": `Provide a concise, easy-to-read summary of the following article in a few paragraphs. Use Markdown for formatting (e.g., headings, bold text, bullet points) to improve readability.\n\nTitle: ${article.title}\n\n${article.content}` }] }] })
     });
     const data = await response.json();
     if (!response.ok || !data.candidates) {
@@ -93,8 +93,8 @@ async function chatWithGemini(history, article) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   const contents = [
-    { "role": "user", "parts": [{ "text": `You are a helpful assistant. I will provide you with an article, and you will answer my questions based *only* on the information within that article. Do not use external knowledge. Here is the article:\n\n---\n\nTITLE: ${article.title}\n\nCONTENT: ${article.content}\n\n---` }] },
-    { "role": "model", "parts": [{ "text": "Okay, I have read the article. I will only use the provided text to answer. What would you like to know?" }] },
+    { "role": "user", "parts": [{ "text": `You are a helpful assistant. I will provide you with an article, and you will answer my questions based *only* on the information within that article. Do not use external knowledge. Format your answers using Markdown. Here is the article:\n\n---\n\nTITLE: ${article.title}\n\nCONTENT: ${article.content}\n\n---` }] },
+    { "role": "model", "parts": [{ "text": "Okay, I have read the article. I will only use the provided text to answer and format my responses in Markdown. What would you like to know?" }] },
     ...history
   ];
 

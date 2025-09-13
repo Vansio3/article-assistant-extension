@@ -30,7 +30,7 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
 #content-container.welcome .welcome-view, #content-container.loading .loading-view, #content-container.summary .summary-view, #content-container.error .error-view { display: flex; }
 .summary-view { align-items: flex-start; text-align: left; justify-content: flex-start; }
 #summary-title { margin-top: 0; font-size: 18px; width: 100%; }
-#summary-text { line-height: 1.6; white-space: pre-wrap; transition: font-size 0.2s ease-in-out; }
+#summary-text { white-space: pre-wrap; transition: font-size 0.2s ease-in-out; }
 .icon { font-size: 32px; background-color: var(--icon-bg); width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
 .spinner { width: 40px; height: 40px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -164,8 +164,6 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
     font-variant-numeric: tabular-nums;
 }
 
-/* sidepanel.css (add to the end) */
-
 /* 10. Modal Button Group for Text Size */
 .button-group-control {
     display: flex;
@@ -193,4 +191,50 @@ body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Ro
     width: 18px;
     height: 18px;
     transition: transform 0.2s ease-in-out; /* Add a little transition for effect */
+}
+
+/* 13. Markdown Content Styling */
+#summary-text, .message.assistant {
+    line-height: 1.6;
+}
+
+#summary-text *:last-child,
+.message.assistant *:last-child {
+    margin-bottom: 0;
+}
+
+#summary-text p, .message.assistant p { margin: 0 0 1em; }
+
+#summary-text h1, #summary-text h2, #summary-text h3, #summary-text h4,
+.message.assistant h1, .message.assistant h2, .message.assistant h3, .message.assistant h4 {
+    margin: 1.2em 0 0.6em;
+}
+
+#summary-text ul, #summary-text ol,
+.message.assistant ul, .message.assistant ol {
+    padding-left: 22px;
+    margin-bottom: 1em;
+}
+
+#summary-text li, .message.assistant li { margin-bottom: 0.4em; }
+
+#summary-text a, .message.assistant a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+#summary-text a:hover, .message.assistant a:hover { text-decoration: underline; }
+
+#summary-text code, .message.assistant code {
+  background-color: var(--icon-bg);
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  border-radius: 6px;
+}
+
+#summary-text blockquote, .message.assistant blockquote {
+    padding: 0 1em;
+    color: var(--text-color);
+    opacity: 0.8;
+    border-left: 0.25em solid var(--border-color);
+    margin: 0 0 1em;
 }

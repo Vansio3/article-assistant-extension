@@ -1,11 +1,10 @@
 // sidepanel.js
 
-// --- Wait for the DOM to be fully loaded before running any setup code ---
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- GLOBAL STATE & ELEMENTS ---
     let conversationHistory = [];
-    let summaryTextContent = '';
+    let summaryTextContent = ''; // Stores the raw Markdown text
     let isReading = false;
     let availableVoices = [];
     let speechQueue = [];
@@ -14,36 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
     const chatModeBtn = document.getElementById('chat-mode-btn');
-    // ... (rest of selectors) ...
     const copyButton = document.getElementById('copy-button');
-    const copyButtonIcon = document.getElementById('copy-button-icon'); // NEW selector for the icon image
-    // ... (rest of selectors) ...
-
-    // --- (The rest of the file is identical to the previous version until the copyButton listener) ---
-
-    // --- FOOTER & TEXT SIZE CONTROLS ---
-    copyButton.addEventListener('click', () => {
-        if (summaryTextContent) {
-            navigator.clipboard.writeText(summaryTextContent).then(() => {
-                // Update these strings to include the new folder path
-                const originalIcon = 'icons/copy-icon.svg';
-                const successIcon = 'icons/checkmark-icon.svg';
-
-                copyButtonIcon.src = successIcon;
-                copyButton.title = "Copied!";
-
-                setTimeout(() => {
-                    copyButtonIcon.src = originalIcon;
-                    copyButton.title = "Copy summary to clipboard";
-                }, 2000);
-            });
-        }
-    });
-
-    // --- (The rest of the file is identical to the previous version) ---
-
-
-    // --- PASTE THE FULL CORRECTED FILE BELOW ---
+    const copyButtonIcon = document.getElementById('copy-button-icon');
     const summaryContent = document.getElementById('summary-mode-content');
     const chatContent = document.getElementById('chat-mode-content');
     const summaryFooter = document.getElementById('summary-footer');
@@ -69,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const decreaseTextBtn = document.getElementById('decrease-text-size');
     const increaseTextBtn = document.getElementById('increase-text-size');
     const textSizeValueEl = document.getElementById('text-size-value');
+
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
         { size: '14px', name: 'Small' },
@@ -78,6 +50,25 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     const DEFAULT_FONT_INDEX = 2;
     let currentFontIndex = DEFAULT_FONT_INDEX;
+    
+    // --- EVENT LISTENERS & LOGIC ---
+
+    copyButton.addEventListener('click', () => {
+        if (summaryTextContent) {
+            navigator.clipboard.writeText(summaryTextContent).then(() => {
+                const originalIcon = 'icons/copy-icon.svg';
+                const successIcon = 'icons/checkmark-icon.svg';
+
+                copyButtonIcon.src = successIcon;
+                copyButton.title = "Copied!";
+
+                setTimeout(() => {
+                    copyButtonIcon.src = originalIcon;
+                    copyButton.title = "Copy summary to clipboard";
+                }, 2000);
+            });
+        }
+    });
 
     function openSettingsModal() { settingsModal.classList.add('visible'); }
     function closeSettingsModal() { settingsModal.classList.remove('visible'); }
@@ -149,16 +140,42 @@ document.addEventListener('DOMContentLoaded', () => {
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
 
     chatForm.addEventListener('submit', (e) => { e.preventDefault(); const userInput = chatInput.value.trim(); if (!userInput) return; conversationHistory.push({ role: 'user', parts: [{ text: userInput }] }); appendMessage('user', userInput); chatInput.value = ''; chatSendBtn.disabled = true; showTypingIndicator(true); chrome.runtime.sendMessage({ action: 'chatWithPage', history: conversationHistory }); });
-    function appendMessage(role, text) { const messageDiv = document.createElement('div'); messageDiv.classList.add('message', role); messageDiv.textContent = text; chatHistoryEl.appendChild(messageDiv); chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight; }
+    
+    function appendMessage(role, text) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add('message', role);
+        if (role === 'assistant') {
+            messageDiv.innerHTML = marked.parse(text);
+        } else {
+            messageDiv.textContent = text;
+        }
+        chatHistoryEl.appendChild(messageDiv);
+        chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight;
+    }
+
     function showTypingIndicator(show) { typingIndicator.style.display = show ? 'inline-flex' : 'none'; if (show) chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight; }
     chatInput.addEventListener('input', () => { chatSendBtn.disabled = chatInput.value.trim().length === 0; });
 
     function setState(state, data = {}) {
         contentContainer.className = state;
         switch (state) {
-            case 'summary': summaryTitleEl.textContent = data.title; summaryTextEl.textContent = data.summary; summaryTextContent = data.summary; copyButton.disabled = false; break;
-            case 'error': errorTitleEl.textContent = data.title || 'Oops!'; errorMessageEl.textContent = data.message; copyButton.disabled = true; summaryTextContent = ''; break;
-            case 'loading': case 'welcome': copyButton.disabled = true; summaryTextContent = ''; break;
+            case 'summary':
+                summaryTitleEl.textContent = data.title;
+                summaryTextContent = data.summary; // Store raw markdown for copy/speech
+                summaryTextEl.innerHTML = marked.parse(data.summary); // Parse and render markdown
+                copyButton.disabled = false;
+                break;
+            case 'error':
+                errorTitleEl.textContent = data.title || 'Oops!';
+                errorMessageEl.textContent = data.message;
+                copyButton.disabled = true;
+                summaryTextContent = '';
+                break;
+            case 'loading':
+            case 'welcome':
+                copyButton.disabled = true;
+                summaryTextContent = '';
+                break;
         }
     }
 
