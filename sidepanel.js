@@ -30,6 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatInput = document.getElementById('chat-input');
     const chatSendBtn = document.getElementById('chat-send-btn');
     const typingIndicator = document.getElementById('chat-typing-indicator');
+    const conversationStartersEl = document.getElementById('conversation-starters');
+    const starterBtns = document.querySelectorAll('.starter-btn');
     const readAloudBtn = document.getElementById('read-aloud-btn');
     const settingsBtn = document.getElementById('settings-btn');
     const settingsModal = document.getElementById('settings-modal');
@@ -95,6 +97,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- EVENT LISTENERS & LOGIC ---
 
+    /**
+     * Shows or hides the conversation starter buttons based on chat history.
+     */
+    function updateConversationStartersVisibility() {
+        const hasMessages = chatHistoryEl.children.length > 0;
+        conversationStartersEl.classList.toggle('hidden', hasMessages);
+    }
+
     copyButton.addEventListener('click', () => {
         if (summaryTextContent) {
             navigator.clipboard.writeText(summaryTextContent).then(() => {
@@ -122,6 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         systemMessageDiv.textContent = text;
         chatHistoryEl.appendChild(systemMessageDiv);
         chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight;
+        updateConversationStartersVisibility();
     }
 
     internetToggleBtn.addEventListener('click', () => {
@@ -220,6 +231,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    starterBtns.forEach(button => {
+        button.addEventListener('click', () => {
+            const userInput = button.textContent;
+            conversationHistory.push({ role: 'user', parts: [{ text: userInput }] });
+            appendMessage('user', userInput);
+            chatInput.value = '';
+            chatSendBtn.disabled = true;
+            showTypingIndicator(true);
+            chrome.runtime.sendMessage({
+                action: 'chatWithPage',
+                history: conversationHistory,
+                internetAccess: isInternetSearchEnabled
+            });
+        });
+    });
+
+
     function appendMessage(role, text) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
@@ -230,6 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         chatHistoryEl.appendChild(messageDiv);
         chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight;
+        updateConversationStartersVisibility();
     }
 
     function showTypingIndicator(show) { typingIndicator.style.display = show ? 'inline-flex' : 'none'; if (show) chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight; }
@@ -272,6 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 readAloudBtn.disabled = false;
                 conversationHistory = [];
                 chatHistoryEl.innerHTML = '';
+                updateConversationStartersVisibility();
                 isInternetSearchEnabled = false;
                 internetToggleBtn.classList.remove('active');
                 internetToggleBtn.title = "Enable internet access (general knowledge)";
@@ -354,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setState('welcome');
         chatSendBtn.disabled = true;
         readAloudBtn.disabled = true;
+        updateConversationStartersVisibility();
     }
 
     initialize();

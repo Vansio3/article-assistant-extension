@@ -200,7 +200,6 @@ body {
     display: flex;
     flex-direction: column;
     gap: 16px;
-    flex-grow: 1;
     transition: font-size 0.2s ease-in-out;
 }
 .message {
@@ -248,6 +247,37 @@ body {
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+
+#conversation-starters {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: auto 0;
+    text-align: center;
+}
+
+#conversation-starters.hidden {
+    display: none;
+}
+
+.starter-btn {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.starter-btn:hover {
+    background-color: var(--icon-bg);
+    border-color: color-mix(in srgb, var(--text-color) 40%, transparent);
+}
+
 
 /* 6. Footer Controls */
 .action-button, .size-control-button, #chat-send-btn, #internet-toggle-btn {
