@@ -2,9 +2,6 @@
 import { config } from './config.js';
 import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt } from './prompts.js';
 
-// Global variable to hold the context of the currently summarized article
-let currentArticleContext = null;
-
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Background: Extension installed.");
   chrome.contextMenus.create({
@@ -34,7 +31,8 @@ function showLoadingScreen() {
 }
 
 function startSummarization(tab) {
-  currentArticleContext = null; // Reset context on new summarization request
+  // Clear any previous article from session storage to start fresh.
+  chrome.storage.session.set({ currentArticle: null });
   console.log(`Background: Starting summarization for tab ${tab.id}.`);
 
   chrome.sidePanel.open({ tabId: tab.id });
@@ -65,16 +63,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarize") {
-    currentArticleContext = request.article;
-    summarizeWithGemini(request.article);
-    return true; // Indicates async response
+    // Store the article in session storage so it persists.
+    chrome.storage.session.set({ currentArticle: request.article }, () => {
+        summarizeWithGemini(request.article);
+    });
+    return true; // Indicates async response for the API call.
   } else if (request.action === "chatWithPage") {
-    if (!currentArticleContext) {
-      chrome.runtime.sendMessage({ action: "displayChatError", message: "Article context not found. Please summarize a page first." });
-      return;
-    }
-    chatWithGemini(request.history, currentArticleContext, request.internetAccess);
-    return true; // Indicates async response
+    // The chat function will now get the article from storage itself.
+    chatWithGemini(request.history, request.internetAccess);
+    return true; // Indicates async response.
   }
 });
 
@@ -107,7 +104,17 @@ async function summarizeWithGemini(article) {
   }
 }
 
-async function chatWithGemini(history, article, internetAccessEnabled) {
+async function chatWithGemini(history, internetAccessEnabled) {
+  // Retrieve the article from session storage at the time of the request.
+  const data = await chrome.storage.session.get('currentArticle');
+  const article = data.currentArticle;
+
+  // Robustly check if the article context exists.
+  if (!article) {
+    chrome.runtime.sendMessage({ action: "displayChatError", message: "Article context not found. Please summarize a page first." });
+    return;
+  }
+  
   const apiKey = config.GEMINI_API_KEY;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;

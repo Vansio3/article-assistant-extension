@@ -289,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 switchMode('summary');
                 chatModeBtn.disabled = true;
                 readAloudBtn.disabled = true;
+                sendResponse({ received: true }); 
                 break;
             case 'displayChatResponse':
                 showTypingIndicator(false);
@@ -302,7 +303,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 appendMessage('assistant', `Error: ${request.message}`);
                 break;
         }
-        sendResponse({ received: true });
+        // The sendResponse call is removed to prevent the "message channel closed" error.
+        // The background script does not need a response from the side panel.
     });
 
     function applyTextSize(index) {
