@@ -396,10 +396,10 @@ body {
     justify-content: center;
 }
 
+.size-control-button img,
 #internet-toggle-btn img {
-    width: 20px;
-    height: 20px;
-    opacity: 0.7;
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
 }
 
 #internet-toggle-btn.active {
@@ -409,7 +409,6 @@ body {
 
 #internet-toggle-btn.active img {
     opacity: 1;
-    filter: brightness(0) invert(1);
 }
 
 /* 7. Themed Scrollbar Styling */
@@ -459,11 +458,6 @@ body {
     display: flex;
     gap: 8px;
     align-items: center;
-}
-
-#settings-btn img {
-    width: 18px;
-    height: 18px;
 }
 
 /* 9. Settings Modal */
@@ -565,7 +559,6 @@ body {
 
 .button-group-control .size-control-button {
     flex-basis: 30%;
-    /* Give the buttons a base width */
     padding-top: 8px;
     padding-bottom: 8px;
 }
@@ -576,7 +569,6 @@ body {
     text-align: center;
     flex-shrink: 0;
     width: 80px;
-    /* Give a fixed width to prevent layout shifts */
 }
 
 /* 12. Copy Button Icon */
@@ -584,7 +576,6 @@ body {
     width: 18px;
     height: 18px;
     transition: transform 0.2s ease-in-out;
-    /* Add a little transition for effect */
 }
 
 /* 13. Markdown Content Styling (REVISED for Compactness) */
@@ -593,20 +584,15 @@ body {
     line-height: 1.6;
 }
 
-/* First, reset all margins for elements inside the markdown containers */
 #summary-text>*,
 .message.assistant>* {
     margin: 0;
 }
 
-/* Then, add a consistent top margin to every element EXCEPT the first one. */
-/* This creates a predictable gap between elements without compounding. */
 #summary-text>*+*,
 .message.assistant>*+* {
     margin-top: 0.75em;
 }
-
-/* --- Other Markdown styles --- */
 
 #summary-text ul,
 #summary-text ol,
@@ -615,7 +601,6 @@ body {
     padding-left: 22px;
 }
 
-/* Add a smaller gap between list items for better readability */
 #summary-text li+li,
 .message.assistant li+li {
     margin-top: 0.25em;
