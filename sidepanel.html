@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Article Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="sidepanel.css">
 </head>
 
@@ -13,6 +16,7 @@
             <nav class="mode-switcher">
                 <button id="summary-mode-btn" class="mode-btn active" data-mode="summary">Summary</button>
                 <button id="chat-mode-btn" class="mode-btn" data-mode="chat" disabled>Chat with Page</button>
+                <div class="slider"></div>
             </nav>
         </header>
 
@@ -76,8 +80,9 @@
             <div id="chat-footer" class="footer-content">
                 <form id="chat-form">
                     <input type="text" id="chat-input" placeholder="Ask a question about the page..."
-                    autocomplete="off">
-                    <button type="button" id="internet-toggle-btn" title="Enable internet access (general knowledge)">
+                        autocomplete="off">
+                    <button type="button" id="internet-toggle-btn"
+                        title="Enable internet access (general knowledge)">
                         <img src="icons/globe-icon.svg" alt="Toggle Internet Access">
                     </button>
                     <button type="submit" id="chat-send-btn" title="Send message">
@@ -87,7 +92,7 @@
             </div>
         </footer>
     </div>
-    
+
     <script src="lib/marked.min.js"></script>
     <script src="sidepanel.js"></script>
 

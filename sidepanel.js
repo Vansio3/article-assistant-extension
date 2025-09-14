@@ -159,7 +159,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchMode(mode) {
         const isSummary = mode === 'summary';
-        summaryModeBtn.classList.toggle('active', isSummary); chatModeBtn.classList.toggle('active', !isSummary); summaryContent.classList.toggle('active', isSummary); chatContent.classList.toggle('active', !isSummary); summaryFooter.classList.toggle('active', isSummary); chatFooter.classList.toggle('active', !isSummary);
+        summaryModeBtn.classList.toggle('active', isSummary);
+        chatModeBtn.classList.toggle('active', !isSummary);
+        summaryContent.classList.toggle('active', isSummary);
+        chatContent.classList.toggle('active', !isSummary);
+        summaryFooter.classList.toggle('active', isSummary);
+        chatFooter.classList.toggle('active', !isSummary);
     }
     summaryModeBtn.addEventListener('click', () => switchMode('summary'));
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
@@ -179,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
             internetAccess: isInternetSearchEnabled
         });
     });
-    
+
     function appendMessage(role, text) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
@@ -275,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         decreaseTextBtn.disabled = (index === 0);
         increaseTextBtn.disabled = (index === FONT_SETTINGS.length - 1);
     }
-    
+
     increaseTextBtn.addEventListener('click', () => {
         if (currentFontIndex < FONT_SETTINGS.length - 1) {
             const newIndex = currentFontIndex + 1;
@@ -283,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.storage.local.set({ textSizeIndex: newIndex });
         }
     });
-    
+
     decreaseTextBtn.addEventListener('click', () => {
         if (currentFontIndex > 0) {
             const newIndex = currentFontIndex - 1;
