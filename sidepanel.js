@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- GLOBAL STATE & ELEMENTS ---
     let conversationHistory = [];
     let summaryTextContent = ''; // Stores the raw Markdown text for copying
-    let summaryPlainText = '';   // Stores the plain text version for speech
+    let summaryPlainText = ''; // Stores the plain text version for speech
     let isReading = false;
     let availableVoices = [];
     let speechQueue = [];
@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const increaseTextBtn = document.getElementById('increase-text-size');
     const textSizeValueEl = document.getElementById('text-size-value');
     const internetToggleBtn = document.getElementById('internet-toggle-btn');
+    const themeButtons = document.querySelectorAll('.theme-btn');
+    const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
+
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
@@ -52,6 +55,43 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     const DEFAULT_FONT_INDEX = 2;
     let currentFontIndex = DEFAULT_FONT_INDEX;
+
+    // --- THEME LOGIC ---
+
+    /**
+     * Applies the selected theme to the UI, updates the active button, and saves the preference.
+     * @param {string} theme - The theme to apply ('system', 'light', 'dark', 'amber').
+     */
+    function applyAndStoreTheme(theme) {
+        let themeToApply = theme;
+        if (theme === 'system') {
+            themeToApply = darkModeMatcher.matches ? 'dark' : 'light';
+        }
+        document.body.dataset.theme = themeToApply;
+
+        themeButtons.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.themeValue === theme);
+        });
+
+        chrome.storage.local.set({ theme: theme });
+    }
+
+    // Listen for clicks on the theme selector buttons
+    themeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            applyAndStoreTheme(button.dataset.themeValue);
+        });
+    });
+
+    // Listen for changes in the OS color scheme
+    darkModeMatcher.addEventListener('change', () => {
+        chrome.storage.local.get(['theme'], (settings) => {
+            if (!settings.theme || settings.theme === 'system') {
+                applyAndStoreTheme('system');
+            }
+        });
+    });
+
 
     // --- EVENT LISTENERS & LOGIC ---
 
@@ -87,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     internetToggleBtn.addEventListener('click', () => {
         isInternetSearchEnabled = !isInternetSearchEnabled;
         internetToggleBtn.classList.toggle('active', isInternetSearchEnabled);
-        
+
         if (isInternetSearchEnabled) {
             internetToggleBtn.title = "Disable general knowledge.";
             chatInput.placeholder = "Ask anything (uses general knowledge)...";
@@ -159,12 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchMode(mode) {
         const isSummary = mode === 'summary';
-        summaryModeBtn.classList.toggle('active', isSummary);
-        chatModeBtn.classList.toggle('active', !isSummary);
-        summaryContent.classList.toggle('active', isSummary);
-        chatContent.classList.toggle('active', !isSummary);
-        summaryFooter.classList.toggle('active', isSummary);
-        chatFooter.classList.toggle('active', !isSummary);
+        summaryModeBtn.classList.toggle('active', isSummary); chatModeBtn.classList.toggle('active', !isSummary); summaryContent.classList.toggle('active', isSummary); chatContent.classList.toggle('active', !isSummary); summaryFooter.classList.toggle('active', isSummary); chatFooter.classList.toggle('active', !isSummary);
     }
     summaryModeBtn.addEventListener('click', () => switchMode('summary'));
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
@@ -267,7 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 appendMessage('assistant', `Error: ${request.message}`);
                 break;
         }
-        // Acknowledge receipt of the message to prevent the sender from retrying.
         sendResponse({ received: true });
     });
 
@@ -298,9 +332,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function initialize() {
-        chrome.storage.local.get(['textSizeIndex', 'speechSpeed', 'speechVoiceURI'], (settings) => {
+        chrome.storage.local.get(['textSizeIndex', 'speechSpeed', 'speechVoiceURI', 'theme'], (settings) => {
+            // Theme
+            applyAndStoreTheme(settings.theme || 'system');
+
+            // Text Size
             const savedIndex = settings.textSizeIndex;
             applyTextSize(typeof savedIndex === 'number' ? savedIndex : DEFAULT_FONT_INDEX);
+
+            // Speech
             const speed = settings.speechSpeed || 1;
             speedSlider.value = speed;
             speedValueEl.textContent = `${parseFloat(speed).toFixed(1)}x`;
