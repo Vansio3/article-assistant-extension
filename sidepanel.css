@@ -309,10 +309,18 @@ body {
     align-items: center;
     justify-content: center;
 }
+
 .size-control-button img, #internet-toggle-btn img {
-    filter: brightness(0) invert(1);
     opacity: 0.8;
 }
+
+body[data-theme="dark"] .size-control-button img,
+body[data-theme="dark"] #internet-toggle-btn img,
+body[data-theme="amber"] .size-control-button img,
+body[data-theme="amber"] #internet-toggle-btn img {
+    filter: brightness(0) invert(1);
+}
+
 #internet-toggle-btn.active {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
