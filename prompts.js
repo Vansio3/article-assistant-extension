@@ -98,7 +98,7 @@ export function getClaimExtractionPrompt(content) {
 
 **Task:**
 1.  Read the article text provided in the <article> tag.
-2.  Identify up to 5 of the most significant, verifiable, and factual claims. A "claim" is a statement of fact, such as a statistic, a date, a specific event, a quantity, or a direct quote attributing a fact. You **must not** extract opinions or subjective statements.
+2.  Identify up to 10 of the most significant, verifiable, and factual claims. A "claim" is a statement of fact, such as a statistic, a date, a specific event, a quantity, or a direct quote attributing a fact. You **must not** extract opinions or subjective statements.
 3.  Return these claims as a single, valid JSON array of strings.
 
 **Output Format:**
