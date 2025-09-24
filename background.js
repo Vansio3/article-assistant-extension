@@ -1,6 +1,6 @@
 // background.js
 import { config } from './config.js';
-import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt } from './prompts.js';
+import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt, getClaimExtractionPrompt } from './prompts.js';
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Background: Extension installed.");
@@ -72,6 +72,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // The chat function will now get the article from storage itself.
     chatWithGemini(request.history, request.internetAccess);
     return true; // Indicates async response.
+  } else if (request.action === "extractClaims") {
+    extractClaimsWithGemini();
+    return true;
   }
 });
 
@@ -151,5 +154,48 @@ async function chatWithGemini(history, internetAccessEnabled) {
   } catch (error) {
     console.error("Background: Chat API failed.", error);
     chrome.runtime.sendMessage({ action: "displayChatError", message: error.message });
+  }
+}
+
+async function extractClaimsWithGemini() {
+  const { currentArticle } = await chrome.storage.session.get('currentArticle');
+  if (!currentArticle) {
+    chrome.runtime.sendMessage({ action: "displayClaimsError", message: "Article content not found." });
+    return;
+  }
+
+  const apiKey = config.GEMINI_API_KEY;
+  const modelName = config.GEMINI_MODEL;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+  try {
+    const prompt = getClaimExtractionPrompt(currentArticle.content);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
+    });
+
+    const data = await response.json();
+    if (!response.ok || !data.candidates) {
+        throw new Error(data?.error?.message || "Invalid API response.");
+    }
+
+    const responseText = data.candidates[0].content.parts[0].text;
+    
+    // Robustly parse the JSON from the response
+    const startIndex = responseText.indexOf('[');
+    const endIndex = responseText.lastIndexOf(']');
+    if (startIndex === -1 || endIndex === -1) {
+      throw new Error("AI response did not contain a valid JSON array.");
+    }
+    const jsonString = responseText.substring(startIndex, endIndex + 1);
+    const claims = JSON.parse(jsonString);
+
+    chrome.runtime.sendMessage({ action: "displayClaims", claims: claims });
+
+  } catch (error) {
+    console.error("Background: Claim extraction failed.", error);
+    chrome.runtime.sendMessage({ action: "displayClaimsError", message: error.message });
   }
 }

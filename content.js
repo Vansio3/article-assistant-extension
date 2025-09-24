@@ -6,7 +6,8 @@ try {
       action: "summarize",
       article: {
         title: article.title,
-        content: article.textContent.trim()
+        content: article.textContent.trim(),
+        url: document.location.href 
       }
     });
   } else {

@@ -25,17 +25,21 @@
             <!-- SUMMARY MODE CONTAINER -->
             <div id="summary-mode-content" class="mode-content active">
                 <div id="content-container" class="welcome">
+                    <!-- Welcome View -->
                     <div class="view welcome-view">
                         <div class="icon">💡</div>
                         <p>Click the extension icon to generate a summary of the current page.</p>
                     </div>
+                    <!-- Loading View -->
                     <div class="view loading-view">
                         <div class="spinner"></div>
                         <p>Reading the article and generating a summary...</p>
                     </div>
+                    <!-- Summary (Success) View -->
                     <div class="view summary-view">
                         <div id="summary-text"></div>
                     </div>
+                    <!-- Error View -->
                     <div class="view error-view">
                         <div class="icon">⚠️</div>
                         <h2 id="error-title">Oops!</h2>
@@ -51,7 +55,9 @@
                     <button class="starter-btn">Explain this page to me in simple terms.</button>
                     <button class="starter-btn">What's the main point of this article?</button>
                 </div>
-                <div id="chat-history"></div>
+                <div id="chat-history">
+                    <!-- Chat messages will be appended here -->
+                </div>
                 <div id="chat-typing-indicator" class="message assistant">
                     <div class="typing-dots"><span></span><span></span><span></span></div>
                 </div>
@@ -63,10 +69,27 @@
                     <div class="view welcome-view">
                         <div class="icon">🔍</div>
                         <p>Check this article's claims using the official Gemini website.</p>
+                        
+                        <!-- This is the general button -->
                         <button id="fact-check-on-gemini-btn" class="starter-btn" style="margin-top: 20px;">
-                            Prepare Fact-Check & Open Gemini
+                            Prepare General Fact-Check
                         </button>
                         <p id="fact-check-feedback" class="system-message" style="display: none;"></p>
+                        
+                        <!-- NEW: Container for Smart Suggestions -->
+                        <div id="suggestions-container" style="width: 100%; margin-top: 24px;">
+                            <div id="suggestions-loading-view" style="display: none; flex-direction: column; align-items: center;">
+                                <div class="spinner"></div>
+                                <p>Identifying key claims...</p>
+                            </div>
+                            <div id="suggestions-content" style="display: none;">
+                                <h4 style="margin-bottom: 12px; text-align: left; font-weight: 500;">Or, check a specific claim:</h4>
+                                <div id="claim-suggestions" style="display: flex; flex-direction: column; gap: 10px;">
+                                    <!-- Suggestion buttons will be injected here -->
+                                </div>
+                            </div>
+                            <p id="suggestions-error" class="system-message" style="display: none;"></p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -93,8 +116,10 @@
             <!-- Chat Footer -->
             <div id="chat-footer" class="footer-content">
                 <form id="chat-form">
-                    <input type="text" id="chat-input" placeholder="Ask a question about the page..." autocomplete="off">
-                    <button type="button" id="internet-toggle-btn" title="Enable internet access (general knowledge)">
+                    <input type="text" id="chat-input" placeholder="Ask a question about the page..."
+                        autocomplete="off">
+                    <button type="button" id="internet-toggle-btn"
+                        title="Enable internet access (general knowledge)">
                         <img src="icons/globe-icon.svg" alt="Toggle Internet Access">
                     </button>
                     <button type="submit" id="chat-send-btn" title="Send message">
@@ -110,7 +135,7 @@
     </div>
 
     <script src="lib/marked.min.js"></script>
-    <script src="sidepanel.js"></script>
+    <script type="module" src="sidepanel.js"></script>
 
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
@@ -154,6 +179,7 @@
             </div>
         </div>
     </div>
+
 </body>
 
 </html>

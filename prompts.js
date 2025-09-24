@@ -7,6 +7,7 @@
  * @returns {string} The complete prompt for the Gemini API.
  */
 export function getSummarizePrompt(title, content) {
+  // ... (this function remains the same)
   return `
 **Persona:** You are an expert content analyst. Your task is to create a high-quality, structured summary of the provided article.
 
@@ -36,6 +37,7 @@ export function getSummarizePrompt(title, content) {
  * @returns {string} The system prompt to establish context for the Gemini API.
  */
 export function getChatSystemPrompt(title, content) {
+  // ... (this function remains the same)
   return `
 **Persona:** You are a specialized Q&A assistant.
 
@@ -66,6 +68,7 @@ Format all your responses using Markdown.
  * @returns {string} The system prompt for the Gemini API.
  */
 export function getHybridChatSystemPrompt(title, content) {
+  // ... (this function remains the same)
   return `
 **Persona:** You are a helpful and knowledgeable AI assistant.
 
@@ -84,5 +87,101 @@ Format all your responses using Markdown.
     ${content}
   </content>
 </article>
+`;
+}
+
+/**
+ * Generates the prompt for extracting key factual claims from an article.
+ * @param {string} content - The text content of the article.
+ * @returns {string} The complete prompt for the Gemini API.
+ */
+export function getClaimExtractionPrompt(content) {
+  // ... (this function remains the same)
+  return `
+**Persona:** You are an expert analytical assistant. Your task is to read the provided article and identify its main factual claims.
+
+**Task:**
+1.  Read the article text provided in the <article> tag.
+2.  Identify up to 5 of the most significant, verifiable, and factual claims. A "claim" is a statement of fact, such as a statistic, a date, a specific event, a quantity, or a direct quote attributing a fact. You **must not** extract opinions or subjective statements.
+3.  Return these claims as a single, valid JSON array of strings.
+
+**Output Format:**
+Your entire response **must be a single, valid JSON array**. Do not include any other text, markdown, or explanation. Your response must begin with \`[\` and end with \`]\`. If you find no verifiable claims, return an empty array \`[]\`.
+
+**Example of a valid response:**
+[
+  "The new solar farm is expected to generate 500 megawatts of power.",
+  "Construction is scheduled to be completed by Q4 2026.",
+  "Dr. Eva Rostova published the initial findings in the journal 'Nature Physics'."
+]
+
+**Article to Analyze:**
+<article>
+  ${content}
+</article>
+`;
+}
+
+// --- NEW PROMPT FUNCTIONS ---
+
+/**
+ * Generates the prompt for a general, real-time fact-check of an entire article.
+ * @param {string} title - The title of the article being checked.
+ * @param {string} content - The text content of the article.
+ * @param {string} url - The URL of the source article to be excluded from search results.
+ * @returns {string} The complete prompt for the Gemini website.
+ */
+export function getGeneralFactCheckPrompt(title, content, url) {
+  return `
+**TASK: REAL-TIME FACT-CHECK**
+
+**Persona:** You are a meticulous, impartial fact-checker equipped with real-time internet access.
+
+**Critical Instruction:** You are fact-checking an article located at the URL below. You **MUST EXCLUDE** this specific URL and its entire domain from your web search and from your list of sources. Your goal is to find independent, corroborating information, not to cite the article against itself.
+**Source to Exclude:** ${url}
+
+**Core Directive:** Your primary task is to **actively search the web** to find multiple high-quality, independent sources to verify the factual claims made in the article provided below.
+
+**Instructions for the Report:**
+1.  **Overall Assessment:** Start with a brief summary of the article's general accuracy.
+2.  **Key Claims Analysis:** Create a bulleted list for each major factual claim, providing a verdict (e.g., "Accurate," "Inaccurate," "Lacks Context") and a brief explanation based on your independent search results.
+3.  **Sources Found:** At the end, create a "### Sources Found" section and list the full URLs of the top 3-5 independent sources you consulted.
+
+--- START OF ARTICLE TO FACT-CHECK ---
+
+**TITLE:** ${title}
+**CONTENT:** ${content}
+
+--- END OF ARTICLE ---
+`;
+}
+
+/**
+ * Generates the prompt for verifying a single, specific claim from an article.
+ * @param {string} title - The title of the article where the claim originated.
+ * @param {string} claim - The specific claim to be verified.
+ * @param {string} url - The URL of the source article to be excluded.
+ * @returns {string} The complete prompt for the Gemini website.
+ */
+export function getSpecificClaimFactCheckPrompt(title, claim, url) {
+    return `
+**TASK: VERIFY A SPECIFIC CLAIM**
+
+**Critical Instruction:** The claim below comes from an article at the following URL. You **MUST EXCLUDE** this URL and its domain from your web search to ensure you find independent verification.
+**Source to Exclude:** ${url}
+
+**Core Directive:** Use your real-time web search to verify the accuracy of the specific claim provided below.
+
+**Output Format:**
+1.  Start with a clear, one-sentence verdict: "This claim appears to be Accurate," "This claim appears to be Inaccurate," or "This claim Lacks Context/Is Misleading."
+2.  Provide a concise, 2-3 sentence explanation for your verdict based on your independent search results.
+3.  List the URLs of the top 2-3 independent sources you used to verify the claim.
+
+--- START OF CLAIM TO VERIFY ---
+
+"${claim}"
+(From the article titled: "${title}")
+
+--- END OF CLAIM ---
 `;
 }

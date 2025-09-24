@@ -1,4 +1,5 @@
 // sidepanel.js
+import { getGeneralFactCheckPrompt, getSpecificClaimFactCheckPrompt } from './prompts.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -11,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let speechQueue = [];
     let currentSpeechIndex = 0;
     let isInternetSearchEnabled = false;
+    let claimsHaveBeenExtracted = false;
 
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
@@ -51,7 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
     const factCheckOnGeminiBtn = document.getElementById('fact-check-on-gemini-btn');
     const factCheckFeedbackEl = document.getElementById('fact-check-feedback');
-
+    const suggestionsContainer = document.getElementById('suggestions-container');
+    const suggestionsLoadingView = document.getElementById('suggestions-loading-view');
+    const suggestionsContent = document.getElementById('suggestions-content');
+    const claimSuggestionsEl = document.getElementById('claim-suggestions');
+    const suggestionsErrorEl = document.getElementById('suggestions-error');
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
@@ -208,6 +214,14 @@ document.addEventListener('DOMContentLoaded', () => {
         summaryFooter.classList.toggle('active', isSummary);
         chatFooter.classList.toggle('active', isChat);
         factCheckFooter.classList.toggle('active', isFactCheck);
+
+        if (isFactCheck && !claimsHaveBeenExtracted) {
+            claimsHaveBeenExtracted = true;
+            suggestionsLoadingView.style.display = 'flex';
+            suggestionsContent.style.display = 'none';
+            suggestionsErrorEl.style.display = 'none';
+            chrome.runtime.sendMessage({ action: 'extractClaims' });
+        }
     }
     summaryModeBtn.addEventListener('click', () => switchMode('summary'));
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
@@ -237,53 +251,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     factCheckOnGeminiBtn.addEventListener('click', async () => {
+        factCheckOnGeminiBtn.disabled = true;
         const { currentArticle } = await chrome.storage.session.get('currentArticle');
-        if (!currentArticle) {
-            factCheckFeedbackEl.textContent = 'Article content not found. Please summarize a page first.';
+        if (!currentArticle || !currentArticle.url) {
+            factCheckFeedbackEl.textContent = 'Article content/URL not found.';
             factCheckFeedbackEl.style.display = 'block';
+            factCheckOnGeminiBtn.disabled = false;
             return;
         }
 
-        // --- UPDATED PROMPT ---
-        // This new prompt explicitly instructs the model to use its live search tool.
-        const fullPrompt = `
-**TASK: REAL-TIME FACT-CHECK**
-
-**Persona:** You are a meticulous, impartial fact-checker equipped with real-time internet access.
-
-**Core Directive:** Your primary task is to **actively search the web** to find multiple high-quality, independent sources (e.g., major news outlets, scientific journals, reputable reports) to verify the factual claims made in the article provided below.
-
-**Constraint:** You **must not** rely solely on your pre-existing knowledge. The goal is to verify the article against **current** information available online.
-
-**Instructions for the Report:**
-1.  **Overall Assessment:** Start with a brief, one-sentence summary of your findings (e.g., "The article's main claims are well-supported by recent reporting from reputable sources.").
-2.  **Key Claims Analysis:** Create a bulleted list for each major factual claim. For each claim, provide:
-    *   A verdict (e.g., "Accurate," "Inaccurate," "Lacks Context," "Unverifiable").
-    *   A brief explanation for your verdict, referencing the information you found online.
-3.  **Sources Found:** At the very end of your report, create a "### Sources Found" section and list the full URLs of the top 3-5 sources you consulted during your live search. This is mandatory.
-
---- START OF ARTICLE TO FACT-CHECK ---
-
-**TITLE:** ${currentArticle.title}
-
-**CONTENT:** ${currentArticle.content}
-
---- END OF ARTICLE ---
-`;
+        const fullPrompt = getGeneralFactCheckPrompt(currentArticle.title, currentArticle.content, currentArticle.url);
+        
         try {
             await navigator.clipboard.writeText(fullPrompt);
-            factCheckOnGeminiBtn.textContent = 'Copied to Clipboard!';
-            factCheckFeedbackEl.textContent = 'Just paste (Ctrl+V) into the new tab.';
+            factCheckFeedbackEl.textContent = 'Copied! Just paste (Ctrl+V) into the new tab.';
             factCheckFeedbackEl.style.display = 'block';
             chrome.tabs.create({ url: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro" });
-            setTimeout(() => {
-                factCheckOnGeminiBtn.textContent = 'Prepare Fact-Check & Open Gemini';
-                factCheckFeedbackEl.style.display = 'none';
-            }, 4000);
         } catch (err) {
             console.error('Failed to copy text: ', err);
-            factCheckFeedbackEl.textContent = 'Error: Could not copy prompt to clipboard.';
+            factCheckFeedbackEl.textContent = 'Error: Could not copy to clipboard.';
             factCheckFeedbackEl.style.display = 'block';
+        } finally {
+            setTimeout(() => {
+                factCheckFeedbackEl.style.display = 'none';
+                factCheckOnGeminiBtn.disabled = false;
+            }, 3000);
         }
     });
 
@@ -308,9 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (state) {
             case 'summary':
                 summaryTextContent = data.summary;
-                summaryTextEl.innerHTML = marked.parse(data.summary);
+                const parsedHtml = marked.parse(data.summary);
+                summaryTextEl.innerHTML = parsedHtml;
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = marked.parse(data.summary);
+                tempDiv.innerHTML = parsedHtml;
                 summaryPlainText = tempDiv.textContent || tempDiv.innerText || '';
                 copyButton.disabled = false;
                 break;
@@ -345,6 +338,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 internetToggleBtn.classList.remove('active');
                 internetToggleBtn.title = "Enable internet access (general knowledge)";
                 chatInput.placeholder = "Ask a question about the page...";
+                claimsHaveBeenExtracted = false;
+                suggestionsContent.style.display = 'none';
+                suggestionsErrorEl.style.display = 'none';
+                claimSuggestionsEl.innerHTML = '';
                 break;
             case 'displayError':
                 stopReading();
@@ -373,8 +370,61 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatSendBtn.disabled = false;
                 appendMessage('assistant', `Error: ${request.message}`);
                 break;
+            case 'displayClaims':
+                suggestionsLoadingView.style.display = 'none';
+                if (request.claims && request.claims.length > 0) {
+                    renderClaimButtons(request.claims);
+                    suggestionsContent.style.display = 'block';
+                } else {
+                    suggestionsErrorEl.textContent = 'No specific claims were identified for individual checking.';
+                    suggestionsErrorEl.style.display = 'block';
+                }
+                break;
+            case 'displayClaimsError':
+                suggestionsLoadingView.style.display = 'none';
+                suggestionsErrorEl.textContent = `Error: ${request.message}`;
+                suggestionsErrorEl.style.display = 'block';
+                break;
         }
     });
+
+    function renderClaimButtons(claims) {
+        claimSuggestionsEl.innerHTML = '';
+        claims.forEach(claim => {
+            const button = document.createElement('button');
+            button.className = 'starter-btn';
+            button.textContent = `"${claim}"`;
+            button.style.textAlign = 'left';
+            button.style.fontWeight = '400';
+            button.style.fontSize = '13px';
+
+            button.addEventListener('click', async (e) => {
+                const clickedButton = e.currentTarget;
+                clickedButton.disabled = true;
+                const originalText = clickedButton.textContent;
+
+                const { currentArticle } = await chrome.storage.session.get('currentArticle');
+                if (!currentArticle || !currentArticle.url) {
+                    clickedButton.textContent = 'Error: Article context lost.';
+                    setTimeout(() => { clickedButton.textContent = originalText; clickedButton.disabled = false; }, 2000);
+                    return;
+                }
+
+                const targetedPrompt = getSpecificClaimFactCheckPrompt(currentArticle.title, claim, currentArticle.url);
+                
+                try {
+                    await navigator.clipboard.writeText(targetedPrompt);
+                    clickedButton.textContent = 'Copied to Clipboard!';
+                    chrome.tabs.create({ url: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro" });
+                } catch (err) {
+                    clickedButton.textContent = 'Error: Failed to copy.';
+                } finally {
+                    setTimeout(() => { clickedButton.textContent = originalText; clickedButton.disabled = false; }, 2000);
+                }
+            });
+            claimSuggestionsEl.appendChild(button);
+        });
+    }
 
     function applyTextSize(index) {
         const setting = FONT_SETTINGS[index];
@@ -421,6 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         chatModeBtn.disabled = true;
         factCheckModeBtn.disabled = true;
         updateConversationStartersVisibility();
+        claimsHaveBeenExtracted = false;
     }
 
     initialize();
