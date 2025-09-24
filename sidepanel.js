@@ -1,4 +1,5 @@
 // sidepanel.js
+import { config } from './config.js';
 import { getGeneralFactCheckPrompt, getSpecificClaimFactCheckPrompt } from './prompts.js';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -266,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await navigator.clipboard.writeText(fullPrompt);
             factCheckFeedbackEl.textContent = 'Copied! Just paste (Ctrl+V) into the new tab.';
             factCheckFeedbackEl.style.display = 'block';
-            chrome.tabs.create({ url: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro" });
+            chrome.tabs.create({ url: config.GEMINI_WEB_URL });
         } catch (err) {
             console.error('Failed to copy text: ', err);
             factCheckFeedbackEl.textContent = 'Error: Could not copy to clipboard.';
@@ -415,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 try {
                     await navigator.clipboard.writeText(targetedPrompt);
                     clickedButton.textContent = 'Copied to Clipboard!';
-                    chrome.tabs.create({ url: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro" });
+                    chrome.tabs.create({ url: config.GEMINI_WEB_URL });
                 } catch (err) {
                     clickedButton.textContent = 'Error: Failed to copy.';
                 } finally {
