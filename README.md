@@ -20,7 +20,7 @@ Supercharge your reading experience with this powerful Chrome extension. It uses
 *   **Text-to-Speech**: Web Speech API (`window.speechSynthesis`)
 *   **Content Parsing**: Mozilla's `Readability.js`
 *   **Markdown Rendering**: `marked.js`
-*   **Core Technologies**: HTML5, CSS3, JavaScript (ES Modules)
+*   **Core Technologies**: HTML5, CSS3, JavaScript (ES Modules) 
 *   **APIs**: `chrome.sidePanel`, `chrome.scripting`, `chrome.storage`, `chrome.contextMenus`
 
 ## 🚀 Getting Started
