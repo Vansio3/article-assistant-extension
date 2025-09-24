@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GLOBAL STATE & ELEMENTS ---
     let conversationHistory = [];
-    let summaryTextContent = ''; // Stores the raw Markdown text for copying
-    let summaryPlainText = ''; // Stores the plain text version for speech
+    let summaryTextContent = '';
+    let summaryPlainText = '';
     let isReading = false;
     let availableVoices = [];
     let speechQueue = [];
@@ -15,12 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
     const chatModeBtn = document.getElementById('chat-mode-btn');
+    const factCheckModeBtn = document.getElementById('fact-check-mode-btn');
     const copyButton = document.getElementById('copy-button');
     const copyButtonIcon = document.getElementById('copy-button-icon');
     const summaryContent = document.getElementById('summary-mode-content');
     const chatContent = document.getElementById('chat-mode-content');
+    const factCheckContent = document.getElementById('fact-check-mode-content');
     const summaryFooter = document.getElementById('summary-footer');
     const chatFooter = document.getElementById('chat-footer');
+    const factCheckFooter = document.getElementById('fact-check-footer');
     const contentContainer = document.getElementById('content-container');
     const summaryTextEl = document.getElementById('summary-text');
     const errorTitleEl = document.getElementById('error-title');
@@ -46,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const internetToggleBtn = document.getElementById('internet-toggle-btn');
     const themeButtons = document.querySelectorAll('.theme-btn');
     const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
+    const factCheckOnGeminiBtn = document.getElementById('fact-check-on-gemini-btn');
+    const factCheckFeedbackEl = document.getElementById('fact-check-feedback');
 
 
     const FONT_SETTINGS = [
@@ -59,33 +64,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentFontIndex = DEFAULT_FONT_INDEX;
 
     // --- THEME LOGIC ---
-
-    /**
-     * Applies the selected theme to the UI, updates the active button, and saves the preference.
-     * @param {string} theme - The theme to apply ('system', 'light', 'dark', 'amber').
-     */
     function applyAndStoreTheme(theme) {
         let themeToApply = theme;
         if (theme === 'system') {
             themeToApply = darkModeMatcher.matches ? 'dark' : 'light';
         }
         document.body.dataset.theme = themeToApply;
-
         themeButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.themeValue === theme);
         });
-
         chrome.storage.local.set({ theme: theme });
     }
-
-    // Listen for clicks on the theme selector buttons
     themeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            applyAndStoreTheme(button.dataset.themeValue);
-        });
+        button.addEventListener('click', () => applyAndStoreTheme(button.dataset.themeValue));
     });
-
-    // Listen for changes in the OS color scheme
     darkModeMatcher.addEventListener('change', () => {
         chrome.storage.local.get(['theme'], (settings) => {
             if (!settings.theme || settings.theme === 'system') {
@@ -94,12 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-
     // --- EVENT LISTENERS & LOGIC ---
-
-    /**
-     * Shows or hides the conversation starter buttons based on chat history.
-     */
     function updateConversationStartersVisibility() {
         const hasMessages = chatHistoryEl.children.length > 0;
         conversationStartersEl.classList.toggle('hidden', hasMessages);
@@ -108,12 +95,10 @@ document.addEventListener('DOMContentLoaded', () => {
     copyButton.addEventListener('click', () => {
         if (summaryTextContent) {
             navigator.clipboard.writeText(summaryTextContent).then(() => {
-                const originalIcon = 'icons/copy-icon.svg';
-                const successIcon = 'icons/checkmark-icon.svg';
-                copyButtonIcon.src = successIcon;
+                copyButtonIcon.src = 'icons/checkmark-icon.svg';
                 copyButton.title = "Copied!";
                 setTimeout(() => {
-                    copyButtonIcon.src = originalIcon;
+                    copyButtonIcon.src = 'icons/copy-icon.svg';
                     copyButton.title = "Copy summary to clipboard";
                 }, 2000);
             });
@@ -138,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
     internetToggleBtn.addEventListener('click', () => {
         isInternetSearchEnabled = !isInternetSearchEnabled;
         internetToggleBtn.classList.toggle('active', isInternetSearchEnabled);
-
         if (isInternetSearchEnabled) {
             internetToggleBtn.title = "Disable general knowledge.";
             chatInput.placeholder = "Ask anything (uses general knowledge)...";
@@ -210,14 +194,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function switchMode(mode) {
         const isSummary = mode === 'summary';
-        summaryModeBtn.classList.toggle('active', isSummary); chatModeBtn.classList.toggle('active', !isSummary); summaryContent.classList.toggle('active', isSummary); chatContent.classList.toggle('active', !isSummary); summaryFooter.classList.toggle('active', isSummary); chatFooter.classList.toggle('active', !isSummary);
+        const isChat = mode === 'chat';
+        const isFactCheck = mode === 'fact-check';
+
+        summaryModeBtn.classList.toggle('active', isSummary);
+        chatModeBtn.classList.toggle('active', isChat);
+        factCheckModeBtn.classList.toggle('active', isFactCheck);
+
+        summaryContent.classList.toggle('active', isSummary);
+        chatContent.classList.toggle('active', isChat);
+        factCheckContent.classList.toggle('active', isFactCheck);
+
+        summaryFooter.classList.toggle('active', isSummary);
+        chatFooter.classList.toggle('active', isChat);
+        factCheckFooter.classList.toggle('active', isFactCheck);
     }
     summaryModeBtn.addEventListener('click', () => switchMode('summary'));
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
+    factCheckModeBtn.addEventListener('click', () => switchMode('fact-check'));
 
-    chatForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const userInput = chatInput.value.trim();
+    function handleChatSubmit(userInput) {
         if (!userInput) return;
         conversationHistory.push({ role: 'user', parts: [{ text: userInput }] });
         appendMessage('user', userInput);
@@ -229,24 +225,67 @@ document.addEventListener('DOMContentLoaded', () => {
             history: conversationHistory,
             internetAccess: isInternetSearchEnabled
         });
+    }
+
+    chatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleChatSubmit(chatInput.value.trim());
     });
 
     starterBtns.forEach(button => {
-        button.addEventListener('click', () => {
-            const userInput = button.textContent;
-            conversationHistory.push({ role: 'user', parts: [{ text: userInput }] });
-            appendMessage('user', userInput);
-            chatInput.value = '';
-            chatSendBtn.disabled = true;
-            showTypingIndicator(true);
-            chrome.runtime.sendMessage({
-                action: 'chatWithPage',
-                history: conversationHistory,
-                internetAccess: isInternetSearchEnabled
-            });
-        });
+        button.addEventListener('click', () => handleChatSubmit(button.textContent));
     });
 
+    factCheckOnGeminiBtn.addEventListener('click', async () => {
+        const { currentArticle } = await chrome.storage.session.get('currentArticle');
+        if (!currentArticle) {
+            factCheckFeedbackEl.textContent = 'Article content not found. Please summarize a page first.';
+            factCheckFeedbackEl.style.display = 'block';
+            return;
+        }
+
+        // --- UPDATED PROMPT ---
+        // This new prompt explicitly instructs the model to use its live search tool.
+        const fullPrompt = `
+**TASK: REAL-TIME FACT-CHECK**
+
+**Persona:** You are a meticulous, impartial fact-checker equipped with real-time internet access.
+
+**Core Directive:** Your primary task is to **actively search the web** to find multiple high-quality, independent sources (e.g., major news outlets, scientific journals, reputable reports) to verify the factual claims made in the article provided below.
+
+**Constraint:** You **must not** rely solely on your pre-existing knowledge. The goal is to verify the article against **current** information available online.
+
+**Instructions for the Report:**
+1.  **Overall Assessment:** Start with a brief, one-sentence summary of your findings (e.g., "The article's main claims are well-supported by recent reporting from reputable sources.").
+2.  **Key Claims Analysis:** Create a bulleted list for each major factual claim. For each claim, provide:
+    *   A verdict (e.g., "Accurate," "Inaccurate," "Lacks Context," "Unverifiable").
+    *   A brief explanation for your verdict, referencing the information you found online.
+3.  **Sources Found:** At the very end of your report, create a "### Sources Found" section and list the full URLs of the top 3-5 sources you consulted during your live search. This is mandatory.
+
+--- START OF ARTICLE TO FACT-CHECK ---
+
+**TITLE:** ${currentArticle.title}
+
+**CONTENT:** ${currentArticle.content}
+
+--- END OF ARTICLE ---
+`;
+        try {
+            await navigator.clipboard.writeText(fullPrompt);
+            factCheckOnGeminiBtn.textContent = 'Copied to Clipboard!';
+            factCheckFeedbackEl.textContent = 'Just paste (Ctrl+V) into the new tab.';
+            factCheckFeedbackEl.style.display = 'block';
+            chrome.tabs.create({ url: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro" });
+            setTimeout(() => {
+                factCheckOnGeminiBtn.textContent = 'Prepare Fact-Check & Open Gemini';
+                factCheckFeedbackEl.style.display = 'none';
+            }, 4000);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            factCheckFeedbackEl.textContent = 'Error: Could not copy prompt to clipboard.';
+            factCheckFeedbackEl.style.display = 'block';
+        }
+    });
 
     function appendMessage(role, text) {
         const messageDiv = document.createElement('div');
@@ -269,10 +308,9 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (state) {
             case 'summary':
                 summaryTextContent = data.summary;
-                const parsedHtml = marked.parse(data.summary);
-                summaryTextEl.innerHTML = parsedHtml;
+                summaryTextEl.innerHTML = marked.parse(data.summary);
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = parsedHtml;
+                tempDiv.innerHTML = marked.parse(data.summary);
                 summaryPlainText = tempDiv.textContent || tempDiv.innerText || '';
                 copyButton.disabled = false;
                 break;
@@ -298,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stopReading();
                 setState('summary', { summary: request.summary });
                 chatModeBtn.disabled = false;
+                factCheckModeBtn.disabled = false;
                 readAloudBtn.disabled = false;
                 conversationHistory = [];
                 chatHistoryEl.innerHTML = '';
@@ -311,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 stopReading();
                 setState('error', { title: request.title, message: request.message });
                 chatModeBtn.disabled = true;
+                factCheckModeBtn.disabled = true;
                 readAloudBtn.disabled = true;
                 break;
             case 'showLoading':
@@ -318,6 +358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 setState('loading');
                 switchMode('summary');
                 chatModeBtn.disabled = true;
+                factCheckModeBtn.disabled = true;
                 readAloudBtn.disabled = true;
                 sendResponse({ received: true }); 
                 break;
@@ -333,8 +374,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 appendMessage('assistant', `Error: ${request.message}`);
                 break;
         }
-        // The sendResponse call is removed to prevent the "message channel closed" error.
-        // The background script does not need a response from the side panel.
     });
 
     function applyTextSize(index) {
@@ -365,14 +404,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initialize() {
         chrome.storage.local.get(['textSizeIndex', 'speechSpeed', 'speechVoiceURI', 'theme'], (settings) => {
-            // Theme
             applyAndStoreTheme(settings.theme || 'system');
-
-            // Text Size
             const savedIndex = settings.textSizeIndex;
             applyTextSize(typeof savedIndex === 'number' ? savedIndex : DEFAULT_FONT_INDEX);
-
-            // Speech
             const speed = settings.speechSpeed || 1;
             speedSlider.value = speed;
             speedValueEl.textContent = `${parseFloat(speed).toFixed(1)}x`;
@@ -384,6 +418,8 @@ document.addEventListener('DOMContentLoaded', () => {
         setState('welcome');
         chatSendBtn.disabled = true;
         readAloudBtn.disabled = true;
+        chatModeBtn.disabled = true;
+        factCheckModeBtn.disabled = true;
         updateConversationStartersVisibility();
     }
 

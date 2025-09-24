@@ -94,8 +94,12 @@ body {
     box-sizing: border-box;
 }
 
-#summary-mode-content.active { display: block; }
-#chat-mode-content.active { display: flex; }
+#summary-mode-content.active,
+#chat-mode-content.active,
+#fact-check-mode-content.active {
+    display: flex; /* Use flex for consistent vertical alignment */
+    flex-direction: column;
+}
 
 .footer-content { display: none; }
 .footer-content.active {
@@ -117,6 +121,7 @@ body {
 
 .mode-btn {
     flex-grow: 1;
+    flex-basis: 0; /* Ensures buttons share space equally */
     border: none;
     background-color: transparent;
     color: var(--text-color);
@@ -136,7 +141,7 @@ body {
     position: absolute;
     top: 4px;
     left: 4px;
-    width: calc(50% - 4px);
+    width: calc(33.333% - 4px); /* Adjusted for three buttons */
     height: calc(100% - 8px);
     background-color: var(--primary-color);
     border-radius: 9px;
@@ -145,8 +150,9 @@ body {
 }
 
 #chat-mode-btn.active~.slider { transform: translateX(100%); }
+#fact-check-mode-btn.active~.slider { transform: translateX(200%); }
 
-/* 4. Summary View & States */
+/* 4. Summary & Fact-Check View States */
 .view {
     display: none;
     flex-direction: column;
@@ -154,12 +160,14 @@ body {
     text-align: center;
     height: 100%;
     justify-content: center;
+    flex-grow: 1; /* Allows view to fill space */
 }
 
 #content-container.welcome .welcome-view,
 #content-container.loading .loading-view,
 #content-container.summary .summary-view,
-#content-container.error .error-view {
+#content-container.error .error-view,
+#fact-check-container.welcome .welcome-view {
     display: flex;
 }
 
@@ -195,7 +203,6 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* 5. Chat Interface */
-#chat-mode-content { height: 100%; flex-direction: column; }
 #chat-history {
     display: flex;
     flex-direction: column;
@@ -256,9 +263,7 @@ body {
     text-align: center;
 }
 
-#conversation-starters.hidden {
-    display: none;
-}
+#conversation-starters.hidden { display: none; }
 
 .starter-btn {
     width: 100%;

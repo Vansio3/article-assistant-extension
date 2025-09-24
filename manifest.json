@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Article Assistant",
-  "version": "1.3",
-  "description": "Summarizes and chats with articles using the Gemini API.",
+  "version": "1.4",
+  "description": "Summarizes, chats with, and prepares fact-checks for articles using the Gemini API.",
   "permissions": [
     "activeTab",
     "scripting",
     "sidePanel",
     "contextMenus",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "icons": {
     "16": "icons/logo-16.png",
