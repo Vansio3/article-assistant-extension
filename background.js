@@ -59,8 +59,8 @@ function startSummarization(tab) {
   chrome.windows.create({
     url: 'popup.html',
     type: 'popup',
-    width: 500,
-    height: 800
+    width: 600,
+    height: 700
   });
   showLoadingScreen();
 
