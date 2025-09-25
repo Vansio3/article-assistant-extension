@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (voiceURI) { const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI); if (selectedVoice) utterance.voice = selectedVoice; }
             utterance.rate = speed;
             utterance.onend = () => { currentSpeechIndex++; playNextChunk(); };
-            utterance.onerror = (e) => { console.error('SpeechSynthesis.onerror', e); resetReadingState(); };
+            utterance.onerror = (e) => { resetReadingState(); };
             window.speechSynthesis.speak(utterance);
         });
     }
