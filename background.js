@@ -30,6 +30,27 @@ function showLoadingScreen() {
   attempt();
 }
 
+// NEW: Helper function to determine which content script to use
+function getContentScriptForUrl(url) {
+  if (url.includes('youtube.com/watch')) {
+    return {
+      files: ['content_youtube.js'],
+      reason: 'YouTube'
+    };
+  }
+  if (url.endsWith('.pdf')) {
+    return {
+      files: ['content_pdf.js'], // pdf.js is imported inside the script
+      reason: 'PDF'
+    };
+  }
+  // Default for standard web articles
+  return {
+    files: ['lib/Readability.js', 'content.js'],
+    reason: 'Article'
+  };
+}
+
 function startSummarization(tab) {
   // Clear any previous article from session storage to start fresh.
   chrome.storage.session.set({ currentArticle: null });
@@ -38,9 +59,13 @@ function startSummarization(tab) {
   chrome.sidePanel.open({ tabId: tab.id });
   showLoadingScreen();
 
+  // --- MODIFIED SCRIPT INJECTION LOGIC ---
+  const scriptConfig = getContentScriptForUrl(tab.url);
+  console.log(`Background: Detected content type: ${scriptConfig.reason}. Injecting scripts:`, scriptConfig.files);
+
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ["lib/Readability.js", "content.js"]
+    files: scriptConfig.files
   }, () => {
     if (chrome.runtime.lastError) {
       console.error("Background: Error injecting script:", chrome.runtime.lastError.message);

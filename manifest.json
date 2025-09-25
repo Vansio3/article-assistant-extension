@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Article Assistant",
-  "version": "1.4",
-  "description": "Summarizes, chats with, and prepares fact-checks for articles using the Gemini API.",
+  "version": "1.5",
+  "description": "Summarizes articles, PDFs, and video transcripts using the Gemini API.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -41,14 +41,10 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "icons/send-icon.svg",
-        "icons/speaker-icon.svg",
-        "icons/stop-icon.svg",
-        "icons/settings-icon.svg",
-        "icons/copy-icon.svg",
-        "icons/checkmark-icon.svg",
-        "icons/globe-icon.svg",
-        "lib/marked.min.js"
+        "icons/*",
+        "lib/marked.min.js",
+        "lib/pdf.js",
+        "lib/pdf.worker.js"
       ],
       "matches": ["<all_urls>"]
     }
