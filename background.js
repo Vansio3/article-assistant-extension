@@ -2,8 +2,17 @@
 import { config } from './config.js';
 import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt, getClaimExtractionPrompt } from './prompts.js';
 
+let popupWindowId = null;
+
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Background: Extension installed.");
+});
+
+chrome.windows.onRemoved.addListener((windowId) => {
+    if (windowId === popupWindowId) {
+        console.log("Background: Popup window closed.");
+        popupWindowId = null;
+    }
 });
 
 // Sends a message to the side panel, retrying if the panel is not yet ready.
@@ -51,13 +60,38 @@ function startSummarization(tab) {
   chrome.storage.session.set({ currentArticle: null });
   console.log(`Background: Starting summarization for tab ${tab.id}.`);
 
-  chrome.windows.create({
-    url: 'popup.html',
-    type: 'popup',
-    width: 600,
-    height: 700
-  });
-  showLoadingScreen();
+  const createOrFocusWindow = () => {
+    if (popupWindowId !== null) {
+      chrome.windows.get(popupWindowId, (existingWindow) => {
+        if (chrome.runtime.lastError) {
+          // Window was closed unexpectedly.
+          createPopupWindow();
+        } else {
+          // Window exists, just focus it.
+          chrome.windows.update(popupWindowId, { focused: true });
+          showLoadingScreen();
+        }
+      });
+    } else {
+      createPopupWindow();
+    }
+  };
+
+  const createPopupWindow = () => {
+    chrome.windows.create({
+      url: 'popup.html',
+      type: 'popup',
+      width: 600,
+      height: 700
+    }).then((newWindow) => {
+      popupWindowId = newWindow.id;
+      // showLoadingScreen needs to wait for the window to be ready.
+      // A small timeout helps, or more robustly, a message from popup.js on load.
+      setTimeout(showLoadingScreen, 200);
+    });
+  };
+
+  createOrFocusWindow();
 
   // --- MODIFIED SCRIPT INJECTION LOGIC ---
   const scriptConfig = getContentScriptForUrl(tab.url);
@@ -68,12 +102,20 @@ function startSummarization(tab) {
     files: scriptConfig.files
   }, () => {
     if (chrome.runtime.lastError) {
-      console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
-      chrome.runtime.sendMessage({
-          action: "displayError",
-          title: "Injection Failed",
-          message: "Could not access page content. Please try reloading the page."
-      });
+      // This error is expected if the user closes the tab before injection is complete.
+      // We check for the message and ignore it to avoid cluttering the console.
+      if (chrome.runtime.lastError.message.includes("Frame with ID 0 was removed") ||
+          chrome.runtime.lastError.message.includes("No tab with id")) {
+        console.log("Background: Script injection cancelled because target tab was closed.");
+      } else {
+        // For any other injection errors, we should show an error to the user.
+        console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
+        chrome.runtime.sendMessage({
+            action: "displayError",
+            title: "Injection Failed",
+            message: "Could not access page content. Please try reloading the page."
+        });
+      }
     }
   });
 }
