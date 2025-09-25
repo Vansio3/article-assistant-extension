@@ -4,11 +4,6 @@ import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt, get
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log("Background: Extension installed.");
-  chrome.contextMenus.create({
-    id: "summarize-article",
-    title: "Parse with Article Assistant",
-    contexts: ["page"]
-  });
 });
 
 // Sends a message to the side panel, retrying if the panel is not yet ready.
@@ -84,12 +79,6 @@ function startSummarization(tab) {
 }
 
 chrome.action.onClicked.addListener(startSummarization);
-
-chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "summarize-article") {
-    startSummarization(tab);
-  }
-});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarize") {
