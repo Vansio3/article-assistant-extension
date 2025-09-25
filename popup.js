@@ -1,6 +1,6 @@
 // popup.js
 import { config } from './config.js';
-import { getGeneralFactCheckPrompt, getSpecificClaimFactCheckPrompt } from './prompts.js';
+import { getGeneralFactCheckPrompt } from './prompts.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -8,12 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let conversationHistory = [];
     let summaryTextContent = '';
     let summaryPlainText = '';
+    let factCheckReportContent = '';
+    let isFactCheckRunning = false;
     let isReading = false;
     let availableVoices = [];
     let speechQueue = [];
     let currentSpeechIndex = 0;
     let isInternetSearchEnabled = false;
-    let claimsHaveBeenExtracted = false;
 
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
@@ -52,13 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const internetToggleBtn = document.getElementById('internet-toggle-btn');
     const themeButtons = document.querySelectorAll('.theme-btn');
     const darkModeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
-    const factCheckOnGeminiBtn = document.getElementById('fact-check-on-gemini-btn');
-    const factCheckFeedbackEl = document.getElementById('fact-check-feedback');
-    const suggestionsContainer = document.getElementById('suggestions-container');
-    const suggestionsLoadingView = document.getElementById('suggestions-loading-view');
-    const suggestionsContent = document.getElementById('suggestions-content');
-    const claimSuggestionsEl = document.getElementById('claim-suggestions');
-    const suggestionsErrorEl = document.getElementById('suggestions-error');
+    const factCheckContainer = document.getElementById('fact-check-container');
+    const factCheckReportTextEl = document.getElementById('fact-check-report-text');
+    const factCheckErrorTitleEl = document.getElementById('fact-check-error-title');
+    const factCheckErrorMessageEl = document.getElementById('fact-check-error-message');
+    const deepSearchBtn = document.getElementById('deep-search-btn');
+    const deepSearchFeedbackEl = document.getElementById('deep-search-feedback');
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
@@ -216,12 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
         chatFooter.classList.toggle('active', isChat);
         factCheckFooter.classList.toggle('active', isFactCheck);
 
-        if (isFactCheck && !claimsHaveBeenExtracted) {
-            claimsHaveBeenExtracted = true;
-            suggestionsLoadingView.style.display = 'flex';
-            suggestionsContent.style.display = 'none';
-            suggestionsErrorEl.style.display = 'none';
-            chrome.runtime.sendMessage({ action: 'extractClaims' });
+        if (isFactCheck && !factCheckReportContent && !isFactCheckRunning) {
+            isFactCheckRunning = true;
+            factCheckContainer.className = 'loading';
+            chrome.runtime.sendMessage({ action: 'factCheckArticle' });
         }
     }
     summaryModeBtn.addEventListener('click', () => switchMode('summary'));
@@ -251,13 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => handleChatSubmit(button.textContent));
     });
 
-    factCheckOnGeminiBtn.addEventListener('click', async () => {
-        factCheckOnGeminiBtn.disabled = true;
+    deepSearchBtn.addEventListener('click', async () => {
+        deepSearchBtn.disabled = true;
         const { currentArticle } = await chrome.storage.session.get('currentArticle');
         if (!currentArticle || !currentArticle.url) {
-            factCheckFeedbackEl.textContent = 'Article content/URL not found.';
-            factCheckFeedbackEl.style.display = 'block';
-            factCheckOnGeminiBtn.disabled = false;
+            deepSearchFeedbackEl.textContent = 'Article content/URL not found.';
+            deepSearchFeedbackEl.style.display = 'block';
+            deepSearchBtn.disabled = false;
             return;
         }
 
@@ -265,17 +263,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             await navigator.clipboard.writeText(fullPrompt);
-            factCheckFeedbackEl.textContent = 'Copied! Just paste (Ctrl+V) into the new tab.';
-            factCheckFeedbackEl.style.display = 'block';
+            deepSearchFeedbackEl.textContent = 'Copied! Paste into the new tab.';
+            deepSearchFeedbackEl.style.display = 'block';
             chrome.tabs.create({ url: config.GEMINI_WEB_URL });
         } catch (err) {
             console.error('Failed to copy text: ', err);
-            factCheckFeedbackEl.textContent = 'Error: Could not copy to clipboard.';
-            factCheckFeedbackEl.style.display = 'block';
+            deepSearchFeedbackEl.textContent = 'Error: Could not copy.';
+            deepSearchFeedbackEl.style.display = 'block';
         } finally {
             setTimeout(() => {
-                factCheckFeedbackEl.style.display = 'none';
-                factCheckOnGeminiBtn.disabled = false;
+                deepSearchFeedbackEl.style.display = 'none';
+                deepSearchBtn.disabled = false;
             }, 3000);
         }
     });
@@ -296,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showTypingIndicator(show) { typingIndicator.style.display = show ? 'inline-flex' : 'none'; if (show) chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight; }
     chatInput.addEventListener('input', () => { chatSendBtn.disabled = chatInput.value.trim().length === 0; });
 
-    function setState(state, data = {}) {
+    function setSummaryState(state, data = {}) {
         contentContainer.className = state;
         switch (state) {
             case 'summary':
@@ -328,10 +326,11 @@ document.addEventListener('DOMContentLoaded', () => {
         switch (request.action) {
             case 'displaySummary':
                 stopReading();
-                setState('summary', { summary: request.summary });
+                setSummaryState('summary', { summary: request.summary });
                 chatModeBtn.disabled = false;
                 factCheckModeBtn.disabled = false;
                 readAloudBtn.disabled = false;
+                // Reset other states
                 conversationHistory = [];
                 chatHistoryEl.innerHTML = '';
                 updateConversationStartersVisibility();
@@ -339,21 +338,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 internetToggleBtn.classList.remove('active');
                 internetToggleBtn.title = "Enable internet access (general knowledge)";
                 chatInput.placeholder = "Ask a question about the page...";
-                claimsHaveBeenExtracted = false;
-                suggestionsContent.style.display = 'none';
-                suggestionsErrorEl.style.display = 'none';
-                claimSuggestionsEl.innerHTML = '';
+                factCheckReportContent = '';
+                isFactCheckRunning = false;
+                factCheckContainer.className = 'welcome';
                 break;
             case 'displayError':
                 stopReading();
-                setState('error', { title: request.title, message: request.message });
+                setSummaryState('error', { title: request.title, message: request.message });
                 chatModeBtn.disabled = true;
                 factCheckModeBtn.disabled = true;
                 readAloudBtn.disabled = true;
                 break;
             case 'showLoading':
                 stopReading();
-                setState('loading');
+                setSummaryState('loading');
                 switchMode('summary');
                 chatModeBtn.disabled = true;
                 factCheckModeBtn.disabled = true;
@@ -371,66 +369,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatSendBtn.disabled = false;
                 appendMessage('assistant', `Error: ${request.message}`);
                 break;
-            case 'displayClaims':
-                suggestionsLoadingView.style.display = 'none';
-                if (request.claims && request.claims.length > 0) {
-                    renderClaimButtons(request.claims);
-                    suggestionsContent.style.display = 'block';
-                } else {
-                    suggestionsErrorEl.textContent = 'No specific claims were identified for individual checking.';
-                    suggestionsErrorEl.style.display = 'block';
-                }
+            case 'displayFactCheckReport':
+                isFactCheckRunning = false;
+                factCheckReportContent = request.report;
+                factCheckReportTextEl.innerHTML = marked.parse(request.report);
+                factCheckContainer.className = 'summary'; // Re-use summary view styles
                 break;
-            case 'displayClaimsError':
-                suggestionsLoadingView.style.display = 'none';
-                suggestionsErrorEl.textContent = `Error: ${request.message}`;
-                suggestionsErrorEl.style.display = 'block';
+            case 'displayFactCheckError':
+                isFactCheckRunning = false;
+                factCheckErrorTitleEl.textContent = "Fact-Check Failed";
+                factCheckErrorMessageEl.textContent = request.message;
+                factCheckContainer.className = 'error';
                 break;
         }
     });
-
-    function renderClaimButtons(claims) {
-        claimSuggestionsEl.innerHTML = '';
-        claims.forEach(claim => {
-            const button = document.createElement('button');
-            button.className = 'starter-btn';
-            button.textContent = `"${claim}"`;
-            button.style.textAlign = 'left';
-            button.style.fontWeight = '400';
-            button.style.fontSize = '13px';
-
-            button.addEventListener('click', async (e) => {
-                const clickedButton = e.currentTarget;
-                clickedButton.disabled = true;
-                const originalText = clickedButton.textContent;
-
-                const { currentArticle } = await chrome.storage.session.get('currentArticle');
-                if (!currentArticle || !currentArticle.url) {
-                    clickedButton.textContent = 'Error: Article context lost.';
-                    setTimeout(() => { clickedButton.textContent = originalText; clickedButton.disabled = false; }, 2000);
-                    return;
-                }
-
-                const targetedPrompt = getSpecificClaimFactCheckPrompt(currentArticle.title, claim, currentArticle.url);
-                
-                try {
-                    await navigator.clipboard.writeText(targetedPrompt);
-                    clickedButton.textContent = 'Copied to Clipboard!';
-                    chrome.tabs.create({ url: config.GEMINI_WEB_URL });
-                } catch (err) {
-                    clickedButton.textContent = 'Error: Failed to copy.';
-                } finally {
-                    setTimeout(() => { clickedButton.textContent = originalText; clickedButton.disabled = false; }, 2000);
-                }
-            });
-            claimSuggestionsEl.appendChild(button);
-        });
-    }
 
     function applyTextSize(index) {
         const setting = FONT_SETTINGS[index];
         summaryTextEl.style.fontSize = setting.size;
         chatHistoryEl.style.fontSize = setting.size;
+        factCheckReportTextEl.style.fontSize = setting.size; // Apply to fact-check report too
         textSizeValueEl.textContent = setting.name;
         currentFontIndex = index;
         decreaseTextBtn.disabled = (index === 0);
@@ -466,13 +424,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => { voiceSelect.value = settings.speechVoiceURI; }, 100);
             }
         });
-        setState('welcome');
+        setSummaryState('welcome');
+        factCheckContainer.className = 'welcome';
         chatSendBtn.disabled = true;
         readAloudBtn.disabled = true;
         chatModeBtn.disabled = true;
         factCheckModeBtn.disabled = true;
         updateConversationStartersVisibility();
-        claimsHaveBeenExtracted = false;
     }
 
     initialize();

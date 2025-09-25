@@ -95,37 +95,6 @@ Format all your responses using Markdown.
 }
 
 /**
- * Generates the prompt for extracting key factual claims from an article.
- * @param {string} content - The text content of the article.
- * @returns {string} The complete prompt for the Gemini API.
- */
-export function getClaimExtractionPrompt(content) {
-  return `
-**Persona:** You are an expert analytical assistant. Your task is to read the provided article and identify its main factual claims.
-
-**Task:**
-1.  Read the article text provided in the <article> tag.
-2.  Identify up to 5 of the most significant, verifiable, and factual claims. A "claim" is a statement of fact, such as a statistic, a date, a specific event, a quantity, or a direct quote attributing a fact. You **must not** extract opinions or subjective statements.
-3.  Return these claims as a single, valid JSON array of strings.
-
-**Output Format:**
-Your entire response **must be a single, valid JSON array**. Do not include any other text, markdown, or explanation. Your response must begin with \`[\` and end with \`]\`. If you find no verifiable claims, return an empty array \`[]\`.
-
-**Example of a valid response:**
-[
-  "The new solar farm is expected to generate 500 megawatts of power.",
-  "Construction is scheduled to be completed by Q4 2026.",
-  "Dr. Eva Rostova published the initial findings in the journal 'Nature Physics'."
-]
-
-**Article to Analyze:**
-<article>
-  ${content}
-</article>
-`;
-}
-
-/**
  * Generates the prompt for a general, real-time fact-check of an entire article.
  * @param {string} title - The title of the article being checked.
  * @param {string} content - The text content of the article.
@@ -159,37 +128,5 @@ Your task is to perform a multi-faceted analysis of the article provided below. 
 **CONTENT:** ${content}
 
 --- END OF ARTICLE ---
-`;
-}
-
-/**
- * Generates the prompt for verifying a single, specific claim from an article.
- * @param {string} title - The title of the article where the claim originated.
- * @param {string} claim - The specific claim to be verified.
- * @param {string} url - The URL of the source article to be excluded.
- * @returns {string} The complete prompt for the Gemini website.
- */
-export function getSpecificClaimFactCheckPrompt(title, claim, url) {
-    return `
-**TASK: CRITICALLY ANALYZE & VERIFY A SPECIFIC CLAIM**
-
-**Critical Instruction:** The claim below is from an article at the following URL. You **MUST EXCLUDE** this URL and its domain from your web search to find independent verification.
-**Source to Exclude:** ${url}
-
-**Core Directive:** Use your real-time web search for a multi-faceted analysis of the specific claim provided below. Do not just verify the surface fact; analyze its truthfulness and the context in which it's presented.
-
-**Example:** If the claim is "Person X said the world is flat," your job is to first verify if Person X actually said that (the fact of the statement). Then, you must state that the underlying assertion (the world being flat) is scientifically false.
-
-**Output Format:**
-1.  **Verdict:** Start with a clear, one-sentence verdict: "Accurate," "Inaccurate," "Accurate, but Misleading," etc.
-2.  **Analysis:** Provide a concise, 2-3 sentence explanation. Address both the factual accuracy of the claim itself AND the truthfulness of the information within the claim.
-3.  **Sources:** List the URLs of the top 2-3 independent sources you used.
-
---- START OF CLAIM TO ANALYZE ---
-
-"${claim}"
-(From the article titled: "${title}")
-
---- END OF CLAIM ---
 `;
 }

@@ -66,30 +66,25 @@
             <!-- FACT CHECK MODE CONTAINER -->
             <div id="fact-check-mode-content" class="mode-content">
                 <div id="fact-check-container" class="welcome">
+                     <!-- Welcome View -->
                     <div class="view welcome-view">
                         <div class="icon">🧐</div>
-                        <p>Check this article's claims using the official Gemini website.</p>
-                        
-                        <!-- This is the general button -->
-                        <button id="fact-check-on-gemini-btn" class="starter-btn" style="margin-top: 20px;">
-                            Prepare General Fact-Check
-                        </button>
-                        <p id="fact-check-feedback" class="system-message" style="display: none;"></p>
-                        
-                        <!-- NEW: Container for Smart Suggestions -->
-                        <div id="suggestions-container" style="width: 100%; margin-top: 24px;">
-                            <div id="suggestions-loading-view" style="display: none; flex-direction: column; align-items: center;">
-                                <div class="spinner"></div>
-                                <p>Identifying key claims...</p>
-                            </div>
-                            <div id="suggestions-content" style="display: none;">
-                                <h4 style="margin-bottom: 12px; text-align: left; font-weight: 500;">Or, check a specific claim:</h4>
-                                <div id="claim-suggestions" style="display: flex; flex-direction: column; gap: 10px;">
-                                    <!-- Suggestion buttons will be injected here -->
-                                </div>
-                            </div>
-                            <p id="suggestions-error" class="system-message" style="display: none;"></p>
-                        </div>
+                        <p>Click the "Fact Check" tab to generate a real-time analysis of the article's claims.</p>
+                    </div>
+                    <!-- Loading View -->
+                    <div class="view loading-view">
+                        <div class="spinner"></div>
+                        <p>Analyzing claims and searching for independent sources...</p>
+                    </div>
+                    <!-- Fact Check Report (Success) View -->
+                    <div class="view summary-view" id="fact-check-report-view">
+                        <div id="fact-check-report-text"></div>
+                    </div>
+                    <!-- Error View -->
+                    <div class="view error-view" id="fact-check-error-view">
+                        <div class="icon">⚠️</div>
+                        <h2 id="fact-check-error-title">Oops!</h2>
+                        <p id="fact-check-error-message">Something went wrong.</p>
                     </div>
                 </div>
             </div>
@@ -129,7 +124,10 @@
             </div>
             <!-- Fact Check Footer -->
             <div id="fact-check-footer" class="footer-content">
-                 <!-- Currently empty, can add copy button or other controls here -->
+                 <button id="deep-search-btn" class="starter-btn">
+                    Deep Search in AI Studio
+                 </button>
+                 <p id="deep-search-feedback" class="system-message" style="display: none; margin-left: 12px;"></p>
             </div>
         </footer>
     </div>

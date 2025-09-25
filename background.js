@@ -1,6 +1,6 @@
 // background.js
 import { config } from './config.js';
-import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt, getClaimExtractionPrompt } from './prompts.js';
+import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt, getGeneralFactCheckPrompt } from './prompts.js';
 
 let popupWindowId = null;
 
@@ -133,8 +133,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // The chat function will now get the article from storage itself.
     chatWithGemini(request.history, request.internetAccess);
     return true; // Indicates async response.
-  } else if (request.action === "extractClaims") {
-    extractClaimsWithGemini();
+  } else if (request.action === "factCheckArticle") {
+    factCheckWithGemini();
     return true;
   }
 });
@@ -229,10 +229,10 @@ async function chatWithGemini(history, internetAccessEnabled) {
   }
 }
 
-async function extractClaimsWithGemini() {
+async function factCheckWithGemini() {
   const { currentArticle } = await chrome.storage.session.get('currentArticle');
   if (!currentArticle) {
-    chrome.runtime.sendMessage({ action: "displayClaimsError", message: "Article content not found." });
+    chrome.runtime.sendMessage({ action: "displayFactCheckError", message: "Article content not found." });
     return;
   }
 
@@ -241,33 +241,28 @@ async function extractClaimsWithGemini() {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   try {
-    const prompt = getClaimExtractionPrompt(currentArticle.content);
+    const prompt = getGeneralFactCheckPrompt(currentArticle.title, currentArticle.content, currentArticle.url);
+    const requestBody = {
+      contents: [{ parts: [{ text: prompt }] }],
+      tools: [{ "googleSearch": {} }]
+    };
+
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
+      body: JSON.stringify(requestBody)
     });
 
     const data = await response.json();
     if (!response.ok || !data.candidates) {
         throw new Error(data?.error?.message || "Invalid API response.");
     }
-
-    const responseText = data.candidates[0].content.parts[0].text;
     
-    // Robustly parse the JSON from the response
-    const startIndex = responseText.indexOf('[');
-    const endIndex = responseText.lastIndexOf(']');
-    if (startIndex === -1 || endIndex === -1) {
-      throw new Error("AI response did not contain a valid JSON array.");
-    }
-    const jsonString = responseText.substring(startIndex, endIndex + 1);
-    const claims = JSON.parse(jsonString);
-
-    chrome.runtime.sendMessage({ action: "displayClaims", claims: claims });
+    const report = data.candidates[0].content.parts[0].text;
+    chrome.runtime.sendMessage({ action: "displayFactCheckReport", report: report });
 
   } catch (error) {
-    console.error("Background: Claim extraction failed.", error);
-    chrome.runtime.sendMessage({ action: "displayClaimsError", message: error.message });
+    console.error("Background: Fact-check API failed.", error);
+    chrome.runtime.sendMessage({ action: "displayFactCheckError", message: error.message });
   }
 }
