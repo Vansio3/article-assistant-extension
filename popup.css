@@ -163,6 +163,14 @@ body {
     flex-grow: 1; /* Allows view to fill space */
 }
 
+/* NEW: Ensures the view containers fill the available space */
+#content-container,
+#fact-check-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
 /* This section handles displaying the correct view based on the parent's class */
 #content-container.welcome .welcome-view,
 #content-container.loading .loading-view,
@@ -179,7 +187,7 @@ body {
 .summary-view {
     align-items: flex-start;
     text-align: left;
-    justify-content: flex-start;
+    justify-content: flex-start; /* Overrides center alignment for content views */
     width: 100%;
 }
 
