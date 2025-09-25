@@ -127,7 +127,8 @@ async function chatWithGemini(history, internetAccessEnabled) {
 
   if (internetAccessEnabled) {
     systemPrompt = getHybridChatSystemPrompt(article.title, article.content);
-    initialModelResponse = "Okay, I have read the article. I can now answer questions about it or use my general knowledge. How can I help you?";
+    // Updated to reflect real-time search capabilities
+    initialModelResponse = "Okay, I have read the article. I can now answer questions about it or use real-time Google Search to find current information. How can I help you?";
   } else {
     systemPrompt = getChatSystemPrompt(article.title, article.content);
     initialModelResponse = "Okay, I have read the article. I will only use the provided text to answer and format my responses in Markdown. What would you like to know?";
@@ -139,11 +140,21 @@ async function chatWithGemini(history, internetAccessEnabled) {
     ...history
   ];
 
+  // Prepare the main request body
+  const requestBody = { contents };
+
+  // If internet access is enabled, add the grounding tool to the request
+  if (internetAccessEnabled) {
+    requestBody.tools = [{
+      "googleSearch": {}
+    }];
+  }
+
   try {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
+      body: JSON.stringify(requestBody) // Use the updated request body
     });
     const data = await response.json();
     if (!response.ok || !data.candidates) {
