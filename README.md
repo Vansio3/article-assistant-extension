@@ -19,7 +19,7 @@ Article Assistant is a powerful Chrome extension that uses the Google Gemini API
     *   Customize the voice and playback speed in the settings.
 *   **Customizable User Experience**:
     *   **Multiple Themes**: Choose between System, Light, Dark, and Amber themes.
-    *   **Adjustable Text Size**: Increase or decrease the text size for comfortable reading.
+    *   **Adjustable Text Size**: Increase or decrease the text size for comfortable reading. 
 
 ## How It Works
 
