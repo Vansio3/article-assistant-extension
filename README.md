@@ -49,7 +49,7 @@ To install and run this extension locally, follow these steps:
       GEMINI_API_KEY: "YOUR_GEMINI_API_KEY",
 
       // The model to use for API calls
-      GEMINI_MODEL: "gemini-2.5-flash-lite",
+      GEMINI_MODEL: "gemini-flash-lite-latest",
 
       // The URL for the fact-checking feature
       GEMINI_WEB_URL: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro"

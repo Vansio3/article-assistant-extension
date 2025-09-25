@@ -2,7 +2,7 @@
 
 export const config = {
   GEMINI_API_KEY: "GEMINI_API_KEY", // <-- PASTE YOUR KEY HERE
-  GEMINI_MODEL: "gemini-2.5-flash-lite"
+  GEMINI_MODEL: "gemini-flash-lite-latest"
 
   // The URL for the Gemini web interface used by the Fact-Check feature.
   GEMINI_WEB_URL: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro"
