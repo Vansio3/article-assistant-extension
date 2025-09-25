@@ -21,7 +21,7 @@ Supercharge your reading experience with this powerful Chrome extension. It uses
 *   **Content Parsing**: Mozilla's `Readability.js`
 *   **Markdown Rendering**: `marked.js`
 *   **Core Technologies**: HTML5, CSS3, JavaScript (ES Modules) 
-*   **APIs**: `chrome.sidePanel`, `chrome.scripting`, `chrome.storage`, `chrome.contextMenus`
+*   **APIs**: `chrome.scripting`, `chrome.storage`, `chrome.contextMenus`
 
 ## 🚀 Getting Started
 
@@ -99,9 +99,9 @@ The "Article Assistant" extension should now appear in your extensions list and 
 |-- manifest.json             # Core extension configuration, permissions, and scripts.
 |-- background.js             # Service worker; handles API calls and background tasks.
 |-- content.js                # Injected into pages to extract content.
-|-- sidepanel.html            # The main HTML structure for the side panel UI.
-|-- sidepanel.css             # All styles for the side panel, including dark mode.
-|-- sidepanel.js              # Handles all UI logic, state, and user interactions.
+|-- popup.html            # The main HTML structure for the side panel UI.
+|-- popup.css             # All styles for the side panel, including dark mode.
+|-- popup.js              # Handles all UI logic, state, and user interactions.
 |-- prompts.js                # Contains all prompt templates for the Gemini API.
 |-- README.md                 # You are here!
 |-- config.js.example         # Example configuration file for users to copy.

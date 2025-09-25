@@ -1,4 +1,4 @@
-// sidepanel.js
+// popup.js
 import { config } from './config.js';
 import { getGeneralFactCheckPrompt, getSpecificClaimFactCheckPrompt } from './prompts.js';
 

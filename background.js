@@ -57,7 +57,7 @@ function startSummarization(tab) {
   console.log(`Background: Starting summarization for tab ${tab.id}.`);
 
   chrome.windows.create({
-    url: 'sidepanel.html',
+    url: 'popup.html',
     type: 'popup',
     width: 500,
     height: 800
