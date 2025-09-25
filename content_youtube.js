@@ -89,7 +89,7 @@
         }
 
         // Wait for the transcript panel to be fully visible and populated.
-        const transcriptPanel = await waitForElement('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"][visibility="ENGAGEMENT_PANEL_VISIBILITY_EXPANDED"]');
+        const transcriptPanel = await waitForElement('ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"]');
         await waitForElement("ytd-transcript-segment-renderer", transcriptPanel);
         await new Promise(resolve => setTimeout(resolve, 500)); // Final small delay for safety
 

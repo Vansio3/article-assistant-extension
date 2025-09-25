@@ -56,7 +56,12 @@ function startSummarization(tab) {
   chrome.storage.session.set({ currentArticle: null });
   console.log(`Background: Starting summarization for tab ${tab.id}.`);
 
-  chrome.sidePanel.open({ tabId: tab.id });
+  chrome.windows.create({
+    url: 'sidepanel.html',
+    type: 'popup',
+    width: 500,
+    height: 800
+  });
   showLoadingScreen();
 
   // --- MODIFIED SCRIPT INJECTION LOGIC ---
