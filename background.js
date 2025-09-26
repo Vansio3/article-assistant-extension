@@ -55,21 +55,19 @@ function getContentScriptForUrl(url) {
   };
 }
 
-function startSummarization(tab) {
+// MODIFIED: This function is now async to handle the API key check
+async function startSummarization(tab) {
   // Clear any previous article from session storage to start fresh.
   chrome.storage.session.set({ currentArticle: null });
-  console.log(`Background: Starting summarization for tab ${tab.id}.`);
+  console.log(`Background: Starting process for tab ${tab.id}.`);
 
   const createOrFocusWindow = () => {
     if (popupWindowId !== null) {
       chrome.windows.get(popupWindowId, (existingWindow) => {
         if (chrome.runtime.lastError) {
-          // Window was closed unexpectedly.
           createPopupWindow();
         } else {
-          // Window exists, just focus it.
           chrome.windows.update(popupWindowId, { focused: true });
-          showLoadingScreen();
         }
       });
     } else {
@@ -85,15 +83,26 @@ function startSummarization(tab) {
       height: 700
     }).then((newWindow) => {
       popupWindowId = newWindow.id;
-      // showLoadingScreen needs to wait for the window to be ready.
-      // A small timeout helps, or more robustly, a message from popup.js on load.
-      setTimeout(showLoadingScreen, 200);
     });
   };
 
   createOrFocusWindow();
 
-  // --- MODIFIED SCRIPT INJECTION LOGIC ---
+  // --- NEW: API Key Check at the Start ---
+  const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+  if (!geminiApiKey) {
+    console.log("Background: Gemini API key not found.");
+    // Wait a moment for the popup window to be ready, then send the message.
+    setTimeout(() => {
+      chrome.runtime.sendMessage({ action: "apiKeyRequired" });
+    }, 250);
+    return; // Stop the function here
+  }
+
+  // If key exists, proceed with summarization.
+  console.log(`Background: Starting summarization for tab ${tab.id}.`);
+  showLoadingScreen(); // Show loading screen only if key exists
+
   const scriptConfig = getContentScriptForUrl(tab.url);
   console.log(`Background: Detected content type: ${scriptConfig.reason}. Injecting scripts:`, scriptConfig.files);
 
@@ -102,13 +111,10 @@ function startSummarization(tab) {
     files: scriptConfig.files
   }, () => {
     if (chrome.runtime.lastError) {
-      // This error is expected if the user closes the tab before injection is complete.
-      // We check for the message and ignore it to avoid cluttering the console.
       if (chrome.runtime.lastError.message.includes("Frame with ID 0 was removed") ||
           chrome.runtime.lastError.message.includes("No tab with id")) {
         console.log("Background: Script injection cancelled because target tab was closed.");
       } else {
-        // For any other injection errors, we should show an error to the user.
         console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
         chrome.runtime.sendMessage({
             action: "displayError",
@@ -124,15 +130,13 @@ chrome.action.onClicked.addListener(startSummarization);
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarize") {
-    // Store the article in session storage so it persists.
     chrome.storage.session.set({ currentArticle: request.article }, () => {
         summarizeWithGemini(request.article);
     });
-    return true; // Indicates async response for the API call.
+    return true;
   } else if (request.action === "chatWithPage") {
-    // The chat function will now get the article from storage itself.
     chatWithGemini(request.history, request.internetAccess);
-    return true; // Indicates async response.
+    return true;
   } else if (request.action === "factCheckArticle") {
     factCheckWithGemini();
     return true;
@@ -140,13 +144,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function summarizeWithGemini(article) {
-  // MODIFIED: Retrieve API key from storage
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
   const apiKey = geminiApiKey;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-  // MODIFIED: Check if the key exists in storage
   if (!apiKey) {
      chrome.runtime.sendMessage({ action: "displayError", title: "Configuration Error", message: "API key not set. Please add it in the settings." });
      return;
@@ -172,21 +174,17 @@ async function summarizeWithGemini(article) {
 }
 
 async function chatWithGemini(history, internetAccessEnabled) {
-  // MODIFIED: Retrieve API key from storage
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
   const apiKey = geminiApiKey;
 
-  // MODIFIED: Check if the key exists in storage
   if (!apiKey) {
     chrome.runtime.sendMessage({ action: "displayChatError", message: "API key not set. Please add it in the settings." });
     return;
   }
   
-  // Retrieve the article from session storage at the time of the request.
   const data = await chrome.storage.session.get('currentArticle');
   const article = data.currentArticle;
 
-  // Robustly check if the article context exists.
   if (!article) {
     chrome.runtime.sendMessage({ action: "displayChatError", message: "Article context not found. Please summarize a page first." });
     return;
@@ -200,7 +198,6 @@ async function chatWithGemini(history, internetAccessEnabled) {
 
   if (internetAccessEnabled) {
     systemPrompt = getHybridChatSystemPrompt(article.title, article.content);
-    // Updated to reflect real-time search capabilities
     initialModelResponse = "Okay, I have read the article. I can now answer questions about it or use real-time Google Search to find current information. How can I help you?";
   } else {
     systemPrompt = getChatSystemPrompt(article.title, article.content);
@@ -213,10 +210,8 @@ async function chatWithGemini(history, internetAccessEnabled) {
     ...history
   ];
 
-  // Prepare the main request body
   const requestBody = { contents };
 
-  // If internet access is enabled, add the grounding tool to the request
   if (internetAccessEnabled) {
     requestBody.tools = [{
       "googleSearch": {}
@@ -227,7 +222,7 @@ async function chatWithGemini(history, internetAccessEnabled) {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody) // Use the updated request body
+      body: JSON.stringify(requestBody)
     });
     const data = await response.json();
     if (!response.ok || !data.candidates) {
@@ -242,11 +237,9 @@ async function chatWithGemini(history, internetAccessEnabled) {
 }
 
 async function factCheckWithGemini() {
-  // MODIFIED: Retrieve API key from storage
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
   const apiKey = geminiApiKey;
 
-  // MODIFIED: Check if the key exists in storage
   if (!apiKey) {
     chrome.runtime.sendMessage({ action: "displayFactCheckError", message: "API key not set. Please add it in the settings." });
     return;

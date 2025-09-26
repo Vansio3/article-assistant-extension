@@ -176,6 +176,7 @@ body {
 #content-container.loading .loading-view,
 #content-container.summary .summary-view,
 #content-container.error .error-view,
+#content-container.api-key-required .api-key-view, /* ADDED */
 #fact-check-container.welcome .welcome-view,
 #fact-check-container.loading .loading-view,
 #fact-check-container.summary .summary-view, /* Re-use summary-view for the report */
@@ -472,6 +473,9 @@ body[data-theme="amber"] #internet-toggle-btn img {
 #summary-text a:hover, .message.assistant a:hover, #fact-check-report-text a:hover { text-decoration: underline; }
 #summary-text code, .message.assistant code, #fact-check-report-text code { background-color: var(--icon-bg); padding: 0.2em 0.4em; font-size: 85%; border-radius: 6px; }
 #summary-text blockquote, .message.assistant blockquote, #fact-check-report-text blockquote { padding: 0 1em; color: var(--text-color); opacity: 0.8; border-left: 0.25em solid var(--border-color); }
+/* Specific styling for the API key view link */
+.api-key-view a { color: var(--primary-color); text-decoration: none; }
+.api-key-view a:hover { text-decoration: underline; }
 
 /* 12. API Key Input Styling */
 .api-key-control {

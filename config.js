@@ -1,4 +1,4 @@
-// delete ".example" from the file name and leave it as "config.js"
+// config.js
 
 export const config = {
   // The model to use for Gemini API requests.
