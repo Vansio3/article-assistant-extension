@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let speechQueue = [];
     let currentSpeechIndex = 0;
     let isInternetSearchEnabled = false;
+    let currentChatUtterance = null; // NEW: Track the specific utterance for chat messages
 
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
@@ -198,7 +199,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.set({ speechVoiceURI: voiceSelect.value });
     });
 
-    // NEW: Centralized function to reset all read-aloud button states
     function resetAllReadingStates() {
         isReading = false;
         readAloudBtn.classList.remove('reading');
@@ -207,12 +207,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: stopReading now uses the new centralized reset function
+    // MODIFIED: stopReading now also cleans up the chat utterance tracker
     function stopReading() {
-        speechQueue = []; currentSpeechIndex = 0; window.speechSynthesis.cancel(); resetAllReadingStates();
+        speechQueue = [];
+        currentSpeechIndex = 0;
+        if (currentChatUtterance) {
+            currentChatUtterance.onend = null; // Detach listener before cancelling
+            currentChatUtterance.onerror = null;
+            currentChatUtterance = null;
+        }
+        window.speechSynthesis.cancel();
+        resetAllReadingStates();
     }
 
-    // MODIFIED: playNextChunk also uses the new reset function
     function playNextChunk() {
         if (currentSpeechIndex >= speechQueue.length) { resetAllReadingStates(); return; }
         const chunk = speechQueue[currentSpeechIndex];
@@ -317,47 +324,75 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // NEW: Handles clicks on read-aloud buttons within chat messages
+    // MODIFIED: Reworked logic to be robust against race conditions
     function handleChatMessageReadAloud(event) {
         const clickedButton = event.currentTarget;
-        const wasReading = clickedButton.classList.contains('reading');
+        const wasReadingThisMessage = clickedButton.classList.contains('reading');
 
-        // Stop any currently playing audio and reset all button states
-        window.speechSynthesis.cancel();
+        // First, stop any existing speech and clean up old listeners to prevent race conditions.
+        if (window.speechSynthesis.speaking) {
+            if (currentChatUtterance) {
+                currentChatUtterance.onend = null; // Detach listener
+                currentChatUtterance.onerror = null;
+            }
+            window.speechSynthesis.cancel();
+        }
+
+        // If the user's intent was to stop the message that was playing, reset the UI and we're done.
+        if (wasReadingThisMessage) {
+            resetAllReadingStates();
+            currentChatUtterance = null;
+            return;
+        }
+
+        // If we reach here, the user wants to play a new message.
+        // First, ensure the entire UI is in a clean "not playing" state.
         resetAllReadingStates();
 
-        if (wasReading) {
-            return; // If the clicked button was the one playing, we just stop it.
-        }
-
+        // Now, set up the new speech.
+        clickedButton.classList.add('reading');
         const textToRead = clickedButton.dataset.textToRead;
-        if (textToRead) {
-            clickedButton.classList.add('reading');
-            const utterance = new SpeechSynthesisUtterance(textToRead);
-            chrome.storage.local.get(['speechVoiceURI', 'speechSpeed'], (settings) => {
-                const voiceURI = settings.speechVoiceURI;
-                const speed = settings.speechSpeed || 1;
-                if (voiceURI) {
-                    const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI);
-                    if (selectedVoice) utterance.voice = selectedVoice;
-                }
-                utterance.rate = speed;
-                utterance.onend = resetAllReadingStates;
-                utterance.onerror = resetAllReadingStates;
-                window.speechSynthesis.speak(utterance);
-            });
-        }
+        const utterance = new SpeechSynthesisUtterance(textToRead);
+
+        // Track the new utterance so we know which one is "official".
+        currentChatUtterance = utterance;
+
+        // This function will be called when speech ends or errors.
+        const onSpeechEnd = () => {
+            // Only reset the UI if the utterance that ended is the one we are currently tracking.
+            // This prevents a cancelled utterance's 'onend' event from resetting the UI of a new utterance.
+            if (currentChatUtterance === utterance) {
+                resetAllReadingStates();
+                currentChatUtterance = null;
+            }
+        };
+
+        utterance.onend = onSpeechEnd;
+        utterance.onerror = (e) => {
+            console.error("Speech synthesis error:", e);
+            onSpeechEnd(); // Also clean up on error
+        };
+
+        chrome.storage.local.get(['speechVoiceURI', 'speechSpeed'], (settings) => {
+            const voiceURI = settings.speechVoiceURI,
+                speed = settings.speechSpeed || 1;
+            if (voiceURI) {
+                const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI);
+                if (selectedVoice) utterance.voice = selectedVoice;
+            }
+            utterance.rate = speed;
+            window.speechSynthesis.speak(utterance);
+        });
     }
 
 
-    // MODIFIED: Appends a read-aloud button to assistant messages
     function appendMessage(role, text) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
 
         if (role === 'assistant') {
             messageDiv.innerHTML = marked.parse(text);
-            const plainText = messageDiv.textContent || ''; // Get text before adding button
+            const plainText = messageDiv.textContent || ''; 
 
             const readBtn = document.createElement('button');
             readBtn.className = 'chat-read-aloud-btn';
