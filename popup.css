@@ -397,7 +397,7 @@ body[data-theme="amber"] #internet-toggle-btn img {
 .chat-read-aloud-btn {
     position: absolute;
     bottom: -2px;
-    right: 5px;
+    right: -33px;
     width: 28px;
     height: 28px;
     border-radius: 50%;

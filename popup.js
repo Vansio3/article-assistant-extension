@@ -15,7 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let speechQueue = [];
     let currentSpeechIndex = 0;
     let isInternetSearchEnabled = false;
-    let currentChatUtterance = null; // NEW: Track the specific utterance for chat messages
+    let currentChatUtterance = null;
+    let currentSummaryUtterance = null; // NEW: Track the summary utterance
 
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
@@ -207,43 +208,83 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: stopReading now also cleans up the chat utterance tracker
+    // MODIFIED: This function now disarms listeners on BOTH trackers.
     function stopReading() {
         speechQueue = [];
         currentSpeechIndex = 0;
+        
         if (currentChatUtterance) {
-            currentChatUtterance.onend = null; // Detach listener before cancelling
+            currentChatUtterance.onend = null;
             currentChatUtterance.onerror = null;
             currentChatUtterance = null;
         }
+        if (currentSummaryUtterance) {
+            currentSummaryUtterance.onend = null;
+            currentSummaryUtterance.onerror = null;
+            currentSummaryUtterance = null;
+        }
+
         window.speechSynthesis.cancel();
         resetAllReadingStates();
     }
 
+    // MODIFIED: This function now tracks the utterance it creates.
     function playNextChunk() {
-        if (currentSpeechIndex >= speechQueue.length) { resetAllReadingStates(); return; }
+        if (currentSpeechIndex >= speechQueue.length) {
+            resetAllReadingStates();
+            currentSummaryUtterance = null;
+            return;
+        }
         const chunk = speechQueue[currentSpeechIndex];
         const utterance = new SpeechSynthesisUtterance(chunk);
+        currentSummaryUtterance = utterance; // Track this chunk
+
+        const onSummaryEnd = () => {
+            if (currentSummaryUtterance === utterance) {
+                currentSpeechIndex++;
+                playNextChunk();
+            }
+        };
+
+        const onSummaryError = (e) => {
+            if (e.error !== 'canceled') {
+                console.error("Summary speech error:", e);
+            }
+            if (currentSummaryUtterance === utterance) {
+                resetAllReadingStates();
+                currentSummaryUtterance = null;
+            }
+        };
+
+        utterance.onend = onSummaryEnd;
+        utterance.onerror = onSummaryError;
+
         chrome.storage.local.get(['speechVoiceURI', 'speechSpeed'], (settings) => {
             const voiceURI = settings.speechVoiceURI, speed = settings.speechSpeed || 1;
             if (voiceURI) { const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI); if (selectedVoice) utterance.voice = selectedVoice; }
             utterance.rate = speed;
-            utterance.onend = () => { currentSpeechIndex++; playNextChunk(); };
-            utterance.onerror = (e) => { resetAllReadingStates(); };
             window.speechSynthesis.speak(utterance);
         });
     }
 
     readAloudBtn.addEventListener('click', () => {
-        if (isReading || window.speechSynthesis.speaking) {
-            stopReading();
-        } else if (summaryPlainText) {
+        const wasReadingSummary = readAloudBtn.classList.contains('reading');
+        stopReading();
+        if (wasReadingSummary) {
+            return;
+        }
+        if (summaryPlainText) {
             const regex = /[^.!?]+[.!?]+/g;
             speechQueue = (summaryPlainText.match(regex) || [summaryPlainText]).filter(chunk => chunk.trim().length > 0);
             currentSpeechIndex = 0;
-            if (speechQueue.length > 0) { isReading = true; readAloudBtn.classList.add('reading'); playNextChunk(); }
+            if (speechQueue.length > 0) {
+                isReading = true;
+                readAloudBtn.classList.add('reading');
+                playNextChunk();
+            }
         }
     });
+
 
     function switchMode(mode) {
         const isSummary = mode === 'summary';
@@ -324,43 +365,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // MODIFIED: Reworked logic to be robust against race conditions
     function handleChatMessageReadAloud(event) {
         const clickedButton = event.currentTarget;
         const wasReadingThisMessage = clickedButton.classList.contains('reading');
-
-        // First, stop any existing speech and clean up old listeners to prevent race conditions.
-        if (window.speechSynthesis.speaking) {
-            if (currentChatUtterance) {
-                currentChatUtterance.onend = null; // Detach listener
-                currentChatUtterance.onerror = null;
-            }
-            window.speechSynthesis.cancel();
-        }
-
-        // If the user's intent was to stop the message that was playing, reset the UI and we're done.
+        stopReading();
         if (wasReadingThisMessage) {
-            resetAllReadingStates();
-            currentChatUtterance = null;
             return;
         }
-
-        // If we reach here, the user wants to play a new message.
-        // First, ensure the entire UI is in a clean "not playing" state.
-        resetAllReadingStates();
-
-        // Now, set up the new speech.
+        
         clickedButton.classList.add('reading');
         const textToRead = clickedButton.dataset.textToRead;
         const utterance = new SpeechSynthesisUtterance(textToRead);
-
-        // Track the new utterance so we know which one is "official".
+        
         currentChatUtterance = utterance;
 
-        // This function will be called when speech ends or errors.
         const onSpeechEnd = () => {
-            // Only reset the UI if the utterance that ended is the one we are currently tracking.
-            // This prevents a cancelled utterance's 'onend' event from resetting the UI of a new utterance.
             if (currentChatUtterance === utterance) {
                 resetAllReadingStates();
                 currentChatUtterance = null;
@@ -369,13 +388,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         utterance.onend = onSpeechEnd;
         utterance.onerror = (e) => {
-            console.error("Speech synthesis error:", e);
-            onSpeechEnd(); // Also clean up on error
+            if (e.error !== 'canceled') {
+                console.error("Chat speech error:", e);
+            }
+            onSpeechEnd();
         };
 
         chrome.storage.local.get(['speechVoiceURI', 'speechSpeed'], (settings) => {
-            const voiceURI = settings.speechVoiceURI,
-                speed = settings.speechSpeed || 1;
+            const voiceURI = settings.speechVoiceURI, speed = settings.speechSpeed || 1;
             if (voiceURI) {
                 const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI);
                 if (selectedVoice) utterance.voice = selectedVoice;
