@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSpeechIndex = 0;
     let isInternetSearchEnabled = false;
     let currentChatUtterance = null;
-    let currentSummaryUtterance = null; // NEW: Track the summary utterance
+    let currentSummaryUtterance = null;
+    let selectedTextArticle = null; // To hold data for a selected text summary
 
     // --- ELEMENT SELECTORS ---
     const summaryModeBtn = document.getElementById('summary-mode-btn');
@@ -64,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const apiKeyInput = document.getElementById('api-key-input');
     const saveApiKeyBtn = document.getElementById('save-api-key-btn');
     const apiKeyFeedback = document.getElementById('api-key-feedback');
+    const summarizeSelectionBtn = document.getElementById('summarize-selection-btn');
+    const summarizeFullPageBtn = document.getElementById('summarize-full-page-btn');
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
@@ -456,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'loading':
             case 'welcome':
             case 'api-key-required':
+            case 'selection-prompt':
                 copyButton.disabled = true;
                 summaryTextContent = '';
                 summaryPlainText = '';
@@ -463,8 +467,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    summarizeSelectionBtn.addEventListener('click', () => {
+        if (selectedTextArticle) {
+            setSummaryState('loading');
+            chrome.runtime.sendMessage({
+                action: "summarize",
+                article: selectedTextArticle
+            });
+            selectedTextArticle = null;
+        }
+    });
+
+    summarizeFullPageBtn.addEventListener('click', () => {
+        setSummaryState('loading');
+        chrome.runtime.sendMessage({ action: 'summarizeFullPage' });
+        selectedTextArticle = null;
+    });
+
+
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         switch (request.action) {
+            case 'showSelectionPrompt':
+                stopReading();
+                selectedTextArticle = request.article;
+                setSummaryState('selection-prompt');
+                switchMode('summary');
+                chatModeBtn.disabled = true;
+                factCheckModeBtn.disabled = true;
+                readAloudBtn.disabled = true;
+                break;
             case 'apiKeyRequired':
                 stopReading();
                 setSummaryState('api-key-required');

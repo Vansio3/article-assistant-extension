@@ -176,12 +176,22 @@ body {
 #content-container.loading .loading-view,
 #content-container.summary .summary-view,
 #content-container.error .error-view,
-#content-container.api-key-required .api-key-view, /* ADDED */
+#content-container.api-key-required .api-key-view,
+#content-container.selection-prompt .selection-prompt-view, /* ADDED */
 #fact-check-container.welcome .welcome-view,
 #fact-check-container.loading .loading-view,
 #fact-check-container.summary .summary-view, /* Re-use summary-view for the report */
 #fact-check-container.error .error-view {
     display: flex;
+}
+
+.selection-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 16px;
+    width: 80%;
+    max-width: 300px;
 }
 
 

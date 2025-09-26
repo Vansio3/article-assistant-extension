@@ -34,6 +34,34 @@ function showLoadingScreen() {
   attempt();
 }
 
+// Helper function to inject the content scripts for a full-page summary
+function injectContentScripts(tab) {
+    showLoadingScreen(); // Show loading screen before injection
+
+    const scriptConfig = getContentScriptForUrl(tab.url);
+    console.log(`Background: Detected content type: ${scriptConfig.reason}. Injecting scripts:`, scriptConfig.files);
+
+    chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: scriptConfig.files
+    }, () => {
+        if (chrome.runtime.lastError) {
+            if (chrome.runtime.lastError.message.includes("Frame with ID 0 was removed") ||
+                chrome.runtime.lastError.message.includes("No tab with id")) {
+                console.log("Background: Script injection cancelled because target tab was closed.");
+            } else {
+                console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
+                chrome.runtime.sendMessage({
+                    action: "displayError",
+                    title: "Injection Failed",
+                    message: "Could not access page content. Please try reloading the page."
+                });
+            }
+        }
+    });
+}
+
+
 // NEW: Helper function to determine which content script to use
 function getContentScriptForUrl(url) {
   if (url.includes('youtube.com/watch')) {
@@ -55,8 +83,11 @@ function getContentScriptForUrl(url) {
   };
 }
 
-// MODIFIED: This function is now async to handle the API key check
+// MODIFIED: This function now checks for selected text first
 async function startSummarization(tab) {
+  // --- FIX: Store the tab where the action was initiated ---
+  await chrome.storage.session.set({ activeUserTab: tab });
+
   // Clear any previous article from session storage to start fresh.
   chrome.storage.session.set({ currentArticle: null });
   console.log(`Background: Starting process for tab ${tab.id}.`);
@@ -88,40 +119,38 @@ async function startSummarization(tab) {
 
   createOrFocusWindow();
 
-  // --- NEW: API Key Check at the Start ---
+  // --- API Key Check happens after window creation ---
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
-  if (!geminiApiKey) {
-    console.log("Background: Gemini API key not found.");
-    // Wait a moment for the popup window to be ready, then send the message.
-    setTimeout(() => {
-      chrome.runtime.sendMessage({ action: "apiKeyRequired" });
-    }, 250);
-    return; // Stop the function here
-  }
 
-  // If key exists, proceed with summarization.
-  console.log(`Background: Starting summarization for tab ${tab.id}.`);
-  showLoadingScreen(); // Show loading screen only if key exists
-
-  const scriptConfig = getContentScriptForUrl(tab.url);
-  console.log(`Background: Detected content type: ${scriptConfig.reason}. Injecting scripts:`, scriptConfig.files);
-
+  // --- Check for selected text ---
   chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: scriptConfig.files
-  }, () => {
-    if (chrome.runtime.lastError) {
-      if (chrome.runtime.lastError.message.includes("Frame with ID 0 was removed") ||
-          chrome.runtime.lastError.message.includes("No tab with id")) {
-        console.log("Background: Script injection cancelled because target tab was closed.");
-      } else {
-        console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
+    func: () => window.getSelection().toString().trim(),
+  }, async (injectionResults) => {
+    const selectedText = (injectionResults && injectionResults[0] && injectionResults[0].result) ? injectionResults[0].result : '';
+
+    // Always check for API key first
+    if (!geminiApiKey) {
+        console.log("Background: Gemini API key not found.");
+        setTimeout(() => chrome.runtime.sendMessage({ action: "apiKeyRequired" }), 250);
+        return;
+    }
+
+    if (selectedText) {
+      console.log("Background: Detected selected text.");
+      setTimeout(() => {
         chrome.runtime.sendMessage({
-            action: "displayError",
-            title: "Injection Failed",
-            message: "Could not access page content. Please try reloading the page."
+          action: "showSelectionPrompt",
+          article: {
+            title: `Summary of your selection`,
+            content: selectedText,
+            url: tab.url
+          }
         });
-      }
+      }, 250); // Wait for popup to be ready
+    } else {
+      console.log("Background: No text selected. Proceeding with full page summarization.");
+      injectContentScripts(tab);
     }
   });
 }
@@ -132,6 +161,23 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarize") {
     chrome.storage.session.set({ currentArticle: request.article }, () => {
         summarizeWithGemini(request.article);
+    });
+    return true;
+  } else if (request.action === "summarizeFullPage") {
+    console.log("Background: User chose to summarize the full page.");
+    // --- FIX: Retrieve the correct tab from session storage ---
+    chrome.storage.session.get('activeUserTab', (result) => {
+        const targetTab = result.activeUserTab;
+        if (targetTab && targetTab.id) {
+            injectContentScripts(targetTab);
+        } else {
+            console.error("Background: Could not find the target tab from session storage.");
+             chrome.runtime.sendMessage({
+                action: "displayError",
+                title: "Tab Not Found",
+                message: "Could not identify the correct page. Please close the popup and try again."
+            });
+        }
     });
     return true;
   } else if (request.action === "chatWithPage") {
