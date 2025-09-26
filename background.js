@@ -92,17 +92,24 @@ async function startSummarization(tab) {
   chrome.storage.session.set({ currentArticle: null });
   console.log(`Background: Starting process for tab ${tab.id}.`);
 
-  const createOrFocusWindow = () => {
-    if (popupWindowId !== null) {
-      chrome.windows.get(popupWindowId, (existingWindow) => {
-        if (chrome.runtime.lastError) {
-          createPopupWindow();
-        } else {
-          chrome.windows.update(popupWindowId, { focused: true });
-        }
-      });
+  const createOrFocusWindow = async () => {
+    const popupUrl = chrome.runtime.getURL('popup.html');
+    
+    // In Manifest V3, this function returns a promise if you don't use a callback.
+    // We query for all open popup windows to make the search efficient.
+    const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
+
+    const existingPopup = windows.find(w => w.tabs && w.tabs[0]?.url === popupUrl);
+
+    if (existingPopup) {
+        console.log(`Background: Found existing popup window with ID: ${existingPopup.id}. Focusing.`);
+        // Update the global ID just in case it's out of sync
+        popupWindowId = existingPopup.id;
+        await chrome.windows.update(existingPopup.id, { focused: true });
     } else {
-      createPopupWindow();
+        console.log("Background: No active popup found. Creating a new window.");
+        // This function already handles creating the window and setting the ID
+        createPopupWindow(); 
     }
   };
 
