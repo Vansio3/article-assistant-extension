@@ -142,7 +142,7 @@ async function startSummarization(tab) {
         chrome.runtime.sendMessage({
           action: "showSelectionPrompt",
           article: {
-            title: `Summary of your selection`,
+            title: `Selection from: ${tab.title}`,
             content: selectedText,
             url: tab.url
           }
