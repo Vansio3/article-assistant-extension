@@ -552,6 +552,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 isFactCheckRunning = false;
                 factCheckReportContent = request.report;
                 factCheckReportTextEl.innerHTML = marked.parse(request.report);
+                const links = factCheckReportTextEl.querySelectorAll('a');
+                links.forEach(link => {link.target = '_blank';link.rel = 'noopener noreferrer';});
                 factCheckContainer.className = 'summary';
                 break;
             case 'displayFactCheckError':
