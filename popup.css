@@ -315,6 +315,9 @@ body {
     transform: none;
 }
 .size-control-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background-color: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-color);
