@@ -162,7 +162,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.session.set({ currentArticle: request.article }, () => {
         summarizeWithGemini(request.article);
     });
-    return true;
+    // return true; // REMOVED
   } else if (request.action === "summarizeFullPage") {
     console.log("Background: User chose to summarize the full page.");
     // --- FIX: Retrieve the correct tab from session storage ---
@@ -179,13 +179,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
         }
     });
-    return true;
+    // return true; // REMOVED
   } else if (request.action === "chatWithPage") {
     chatWithGemini(request.history, request.internetAccess);
-    return true;
+    // return true; // REMOVED
   } else if (request.action === "factCheckArticle") {
     factCheckWithGemini();
-    return true;
+    // return true; // REMOVED
   }
 });
 
