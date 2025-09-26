@@ -198,14 +198,23 @@ document.addEventListener('DOMContentLoaded', () => {
         chrome.storage.local.set({ speechVoiceURI: voiceSelect.value });
     });
 
+    // NEW: Centralized function to reset all read-aloud button states
+    function resetAllReadingStates() {
+        isReading = false;
+        readAloudBtn.classList.remove('reading');
+        document.querySelectorAll('.chat-read-aloud-btn.reading').forEach(btn => {
+            btn.classList.remove('reading');
+        });
+    }
+
+    // MODIFIED: stopReading now uses the new centralized reset function
     function stopReading() {
-        speechQueue = []; currentSpeechIndex = 0; window.speechSynthesis.cancel(); resetReadingState();
+        speechQueue = []; currentSpeechIndex = 0; window.speechSynthesis.cancel(); resetAllReadingStates();
     }
-    function resetReadingState() {
-        isReading = false; readAloudBtn.classList.remove('reading');
-    }
+
+    // MODIFIED: playNextChunk also uses the new reset function
     function playNextChunk() {
-        if (currentSpeechIndex >= speechQueue.length) { resetReadingState(); return; }
+        if (currentSpeechIndex >= speechQueue.length) { resetAllReadingStates(); return; }
         const chunk = speechQueue[currentSpeechIndex];
         const utterance = new SpeechSynthesisUtterance(chunk);
         chrome.storage.local.get(['speechVoiceURI', 'speechSpeed'], (settings) => {
@@ -213,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (voiceURI) { const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI); if (selectedVoice) utterance.voice = selectedVoice; }
             utterance.rate = speed;
             utterance.onend = () => { currentSpeechIndex++; playNextChunk(); };
-            utterance.onerror = (e) => { resetReadingState(); };
+            utterance.onerror = (e) => { resetAllReadingStates(); };
             window.speechSynthesis.speak(utterance);
         });
     }
@@ -308,14 +317,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // NEW: Handles clicks on read-aloud buttons within chat messages
+    function handleChatMessageReadAloud(event) {
+        const clickedButton = event.currentTarget;
+        const wasReading = clickedButton.classList.contains('reading');
+
+        // Stop any currently playing audio and reset all button states
+        window.speechSynthesis.cancel();
+        resetAllReadingStates();
+
+        if (wasReading) {
+            return; // If the clicked button was the one playing, we just stop it.
+        }
+
+        const textToRead = clickedButton.dataset.textToRead;
+        if (textToRead) {
+            clickedButton.classList.add('reading');
+            const utterance = new SpeechSynthesisUtterance(textToRead);
+            chrome.storage.local.get(['speechVoiceURI', 'speechSpeed'], (settings) => {
+                const voiceURI = settings.speechVoiceURI;
+                const speed = settings.speechSpeed || 1;
+                if (voiceURI) {
+                    const selectedVoice = availableVoices.find(v => v.voiceURI === voiceURI);
+                    if (selectedVoice) utterance.voice = selectedVoice;
+                }
+                utterance.rate = speed;
+                utterance.onend = resetAllReadingStates;
+                utterance.onerror = resetAllReadingStates;
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+    }
+
+
+    // MODIFIED: Appends a read-aloud button to assistant messages
     function appendMessage(role, text) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', role);
+
         if (role === 'assistant') {
             messageDiv.innerHTML = marked.parse(text);
+            const plainText = messageDiv.textContent || ''; // Get text before adding button
+
+            const readBtn = document.createElement('button');
+            readBtn.className = 'chat-read-aloud-btn';
+            readBtn.title = 'Read this message aloud';
+            readBtn.innerHTML = `<img src="icons/speaker-icon.svg" class="play-icon" alt="Read Aloud"><img src="icons/stop-icon.svg" class="stop-icon" alt="Stop Reading">`;
+            readBtn.dataset.textToRead = plainText;
+            readBtn.addEventListener('click', handleChatMessageReadAloud);
+            messageDiv.appendChild(readBtn);
+
         } else {
             messageDiv.textContent = text;
         }
+
         chatHistoryEl.appendChild(messageDiv);
         chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight;
         updateConversationStartersVisibility();
@@ -324,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function showTypingIndicator(show) { typingIndicator.style.display = show ? 'inline-flex' : 'none'; if (show) chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight; }
     chatInput.addEventListener('input', () => { chatSendBtn.disabled = chatInput.value.trim().length === 0; });
 
-    // MODIFIED: This function now handles the new 'api-key-required' state
     function setSummaryState(state, data = {}) {
         contentContainer.className = state;
         switch (state) {
@@ -346,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'loading':
             case 'welcome':
-            case 'api-key-required': // Handles the new state
+            case 'api-key-required':
                 copyButton.disabled = true;
                 summaryTextContent = '';
                 summaryPlainText = '';
@@ -356,7 +410,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         switch (request.action) {
-            // NEW: Handle the message to show API key instructions
             case 'apiKeyRequired':
                 stopReading();
                 setSummaryState('api-key-required');
