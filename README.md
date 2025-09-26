@@ -1,67 +1,62 @@
-# Article Assistant Chrome Extension
+# Article Assistant
 
-Article Assistant is a powerful browser extension that uses the Google Gemini API to help you quickly understand and interact with web content. It can summarize articles, local PDFs, and YouTube video transcripts, allowing you to chat with the content and perform real-time fact-checks.
+Article Assistant is a powerful Chrome extension that leverages the Gemini API to provide users with instant summaries of web articles, PDFs, and YouTube video transcripts. It also features an interactive chat to discuss the content and a fact-checking tool to verify information.
 
 ## Features
 
-- **One-Click Summaries**: Generate concise, easy-to-read summaries of any web article.
-- **YouTube Transcript Support**: Summarize educational videos, tutorials, or talks by automatically extracting the video's transcript.
-- **PDF File Reading**: Open a local or web-based PDF in your browser and get a summary of its content.
-- **Interactive Chat**: Ask questions directly about the content of the page, with the option to enable general knowledge for broader queries.
-- **Real-Time Fact-Checking**: Analyze the article's main claims against independent sources on the internet.
-- **Customizable Experience**: Includes adjustable text size, multiple themes (Light, Dark, Amber), and voice selection for the read-aloud feature.
+-   **AI-Powered Summaries**: Get concise and coherent summaries of any web page, PDF document, or YouTube video transcript.
+-   **Selective Text Analysis**: Summarize and analyze only the text you've highlighted on a page, perfect for quick fact-checks of social media posts or news snippets.
+-   **Interactive Chat**: Engage in a conversation about the article's content to gain a deeper understanding or ask specific questions.
+-   **Fact-Checking**: Verify the claims made in an article or a selected piece of text against other online sources.
+-   **Customizable Experience**:
+    -   Multiple themes (System, Light, Dark, Amber) to suit your preference.
+    -   Adjustable text size for comfortable reading.
+    -   Control the speech speed and choose from available voices for the read-aloud feature.
+-   **Read Aloud**: Listen to the generated summary.
+-   **API Key Support**: Easily configure the extension with your own Gemini API key.
 
----
+## Installation
 
-## Setup & Installation
+1.  Clone this repository or download the source code as a ZIP file.
+2.  Open Google Chrome and navigate to `chrome://extensions`.
+3.  Enable "Developer mode" in the top right corner.
+4.  Click on "Load unpacked" and select the directory where you cloned or unzipped the source code.
+5.  The Article Assistant extension will be added to your Chrome browser.
 
-To run this extension locally, follow these steps.
+## Usage
 
-### 1. Prerequisites
+1.  **Get Your Gemini API Key**:
+    -   Visit [Google AI Studio](https://aistudio.google.com/app/apikey) to create your free API key.
+    -   Click the Article Assistant icon in your Chrome toolbar.
+    -   Click the settings icon (⚙️) in the popup.
+    -   Paste your API key into the "Gemini API Key" field and click "Save".
 
--   Google Chrome or a Chromium-based browser (e.g., Brave, Edge).
+2.  **Summarize a Full Page**:
+    -   Navigate to a web article, PDF, or YouTube video.
+    -   Click the Article Assistant icon in your toolbar or press `Alt+S`.
+    -   The extension will process the content and display a summary.
 
-### 2. Get a Gemini API Key
+3.  **Summarize Selected Text (for Fact-Checking & Snippets)**:
+    -   On any web page, highlight a piece of text you want to analyze. This is particularly useful for checking claims from social media posts, comments, or news snippets.
+    -   With the text still selected, click the Article Assistant icon or press `Alt+S`.
+    -   You will be prompted to choose between summarizing **"Just the Selected Text"** or **"The Entire Page"**.
+    -   Choosing the selection allows for a quick, focused analysis and fact-check of specific claims without processing the full article.
 
-This extension requires a Google Gemini API key to function.
+4.  **Chat with the Page**:
+    -   After a summary is generated, click on the "Chat" tab.
+    -   Ask questions about the article, and the AI will answer based on the content.
 
-1.  Visit **[Google AI Studio](https://aistudio.google.com/app/apikey)**.
-2.  Click "**Create API key**" to get your free key.
-3.  Copy the key to your clipboard. You will need it in a later step.
-
-### 3. Load the Extension in Chrome
-
-1.  Download or clone this repository to your local machine.
-2.  Open Chrome and navigate to `chrome://extensions`.
-3.  Enable "**Developer mode**" using the toggle switch in the top-right corner.
-4.  Click the "**Load unpacked**" button.
-5.  Select the folder where you saved the extension files. The "Article Assistant" should now appear in your list of extensions.
-
-### 4. Configure the API Key
-
-1.  Pin the Article Assistant extension to your toolbar for easy access.
-2.  Click the extension icon. A welcome screen will appear.
-3.  Click the **settings icon (⚙️)** in the bottom-right corner of the popup.
-4.  Paste your Gemini API key into the input field and click "**Save**".
-5.  The extension is now ready to use!
-
----
-
-## How to Use
-
-1.  **Summarize**: Navigate to a supported web page, PDF, or YouTube video. Click the Article Assistant icon (or press `Alt+S`) to generate a summary.
-2.  **Chat**: Once a summary is generated, click the "Chat" tab to ask specific questions about the article's content.
-3.  **Fact Check**: Click the "Fact Check" tab to initiate a real-time analysis of the article's claims.
+5.  **Fact-Check the Article**:
+    -   After a summary is generated, switch to the "Fact Check" tab.
+    -   The extension will analyze the article's (or the selected text's) claims and provide a report with sources.
 
 ## File Structure
 
--   `manifest.json`: Defines the extension's permissions, scripts, and core properties.
--   `background.js`: The service worker that handles API requests, script injection, and core logic.
--   `popup.html` / `popup.js` / `popup.css`: The UI and functionality for the extension's popup window.
--   `content.js`: Injected into standard web pages to extract article text using the `Readability.js` library.
--   `content_youtube.js`: Injected into YouTube pages to find and extract the video transcript.
--   `content_pdf.js`: Injected into the PDF viewer to extract text using `pdf.js`.
--   `prompts.js`: Contains the structured prompt templates sent to the Gemini API for various tasks.
--   `config.js`: Gemini model string and Google AI Studio url setup.
--   `icons/`: Contains all the icons used in the extension's UI.
--   `lib/`: Contains third-party libraries like `marked.js` (for Markdown rendering), `Readability.js`, and `pdf.js`.
+-   `manifest.json`: Defines the extension's properties, permissions, and scripts.
+-   `background.js`: The service worker that handles API requests, manages state, and processes content.
+-   `popup.html` & `popup.css` & `popup.js`: The UI and logic for the extension's popup window.
+-   `content.js`, `content_pdf.js`, `content_youtube.js`: Scripts injected into web pages to extract readable content.
+-   `prompts.js`: Contains the prompt templates for interacting with the Gemini API.
+-   `config.js`: Configuration file for the Gemini model and other settings.
+-   `lib/`: Contains third-party libraries like Readability.js and marked.js.
+-   `icons/`: Contains the extension's icons.
