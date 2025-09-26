@@ -1,8 +1,8 @@
 // delete ".example" from the file name and leave it as "config.js"
 
 export const config = {
-  GEMINI_API_KEY: "GEMINI_API_KEY", // <-- PASTE YOUR KEY HERE
-  GEMINI_MODEL: "gemini-flash-lite-latest"
+  // The model to use for Gemini API requests.
+  GEMINI_MODEL: "gemini-flash-lite-latest",
 
   // The URL for the Gemini web interface used by the Fact-Check feature.
   GEMINI_WEB_URL: "https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-pro"

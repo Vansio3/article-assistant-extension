@@ -140,12 +140,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function summarizeWithGemini(article) {
-  const apiKey = config.GEMINI_API_KEY;
+  // MODIFIED: Retrieve API key from storage
+  const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+  const apiKey = geminiApiKey;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
-  if (apiKey === "YOUR_GEMINI_API_KEY" || !apiKey) {
-     chrome.runtime.sendMessage({ action: "displayError", title: "Configuration Error", message: "API key not set in config.js." });
+  // MODIFIED: Check if the key exists in storage
+  if (!apiKey) {
+     chrome.runtime.sendMessage({ action: "displayError", title: "Configuration Error", message: "API key not set. Please add it in the settings." });
      return;
   }
 
@@ -169,6 +172,16 @@ async function summarizeWithGemini(article) {
 }
 
 async function chatWithGemini(history, internetAccessEnabled) {
+  // MODIFIED: Retrieve API key from storage
+  const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+  const apiKey = geminiApiKey;
+
+  // MODIFIED: Check if the key exists in storage
+  if (!apiKey) {
+    chrome.runtime.sendMessage({ action: "displayChatError", message: "API key not set. Please add it in the settings." });
+    return;
+  }
+  
   // Retrieve the article from session storage at the time of the request.
   const data = await chrome.storage.session.get('currentArticle');
   const article = data.currentArticle;
@@ -179,7 +192,6 @@ async function chatWithGemini(history, internetAccessEnabled) {
     return;
   }
   
-  const apiKey = config.GEMINI_API_KEY;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
   
@@ -230,13 +242,22 @@ async function chatWithGemini(history, internetAccessEnabled) {
 }
 
 async function factCheckWithGemini() {
+  // MODIFIED: Retrieve API key from storage
+  const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
+  const apiKey = geminiApiKey;
+
+  // MODIFIED: Check if the key exists in storage
+  if (!apiKey) {
+    chrome.runtime.sendMessage({ action: "displayFactCheckError", message: "API key not set. Please add it in the settings." });
+    return;
+  }
+
   const { currentArticle } = await chrome.storage.session.get('currentArticle');
   if (!currentArticle) {
     chrome.runtime.sendMessage({ action: "displayFactCheckError", message: "Article content not found." });
     return;
   }
 
-  const apiKey = config.GEMINI_API_KEY;
   const modelName = config.GEMINI_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 

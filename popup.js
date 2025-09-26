@@ -59,6 +59,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const factCheckErrorMessageEl = document.getElementById('fact-check-error-message');
     const deepSearchBtn = document.getElementById('deep-search-btn');
     const deepSearchFeedbackEl = document.getElementById('deep-search-feedback');
+    // NEW API Key elements
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyBtn = document.getElementById('save-api-key-btn');
+    const apiKeyFeedback = document.getElementById('api-key-feedback');
 
     const FONT_SETTINGS = [
         { size: '12px', name: 'Smallest' },
@@ -112,11 +116,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function openSettingsModal() { settingsModal.classList.add('visible'); }
+    // --- MODIFIED: Settings Modal Logic ---
+    function openSettingsModal() {
+        // Load the current API key when the modal is opened
+        chrome.storage.local.get(['geminiApiKey'], (result) => {
+            if (result.geminiApiKey) {
+                apiKeyInput.value = result.geminiApiKey;
+            } else {
+                apiKeyInput.value = '';
+            }
+            apiKeyFeedback.textContent = ''; // Clear any previous feedback
+        });
+        settingsModal.classList.add('visible');
+    }
+
     function closeSettingsModal() { settingsModal.classList.remove('visible'); }
     settingsBtn.addEventListener('click', openSettingsModal);
     closeSettingsBtn.addEventListener('click', closeSettingsModal);
     modalOverlay.addEventListener('click', closeSettingsModal);
+
+    // NEW: Save API Key Logic
+    saveApiKeyBtn.addEventListener('click', () => {
+        const apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+            chrome.storage.local.set({ geminiApiKey: apiKey }, () => {
+                apiKeyFeedback.textContent = 'API Key saved successfully!';
+                setTimeout(() => { apiKeyFeedback.textContent = ''; }, 3000);
+            });
+        } else {
+            // If the user clears the input and saves, remove it from storage
+            chrome.storage.local.remove('geminiApiKey', () => {
+                 apiKeyFeedback.textContent = 'API Key removed.';
+                 setTimeout(() => { apiKeyFeedback.textContent = ''; }, 3000);
+            });
+        }
+    });
+
 
     function appendSystemMessage(text) {
         const systemMessageDiv = document.createElement('div');

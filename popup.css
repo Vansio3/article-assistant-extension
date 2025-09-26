@@ -472,3 +472,40 @@ body[data-theme="amber"] #internet-toggle-btn img {
 #summary-text a:hover, .message.assistant a:hover, #fact-check-report-text a:hover { text-decoration: underline; }
 #summary-text code, .message.assistant code, #fact-check-report-text code { background-color: var(--icon-bg); padding: 0.2em 0.4em; font-size: 85%; border-radius: 6px; }
 #summary-text blockquote, .message.assistant blockquote, #fact-check-report-text blockquote { padding: 0 1em; color: var(--text-color); opacity: 0.8; border-left: 0.25em solid var(--border-color); }
+
+/* 12. API Key Input Styling */
+.api-key-control {
+    display: flex;
+    gap: 8px;
+}
+
+.api-key-control input {
+    flex-grow: 1;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+#save-api-key-btn {
+    border: none;
+    background-color: var(--primary-color);
+    color: var(--primary-text);
+    padding: 0 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color var(--transition-fast);
+}
+
+#save-api-key-btn:hover {
+    opacity: 0.9;
+}
+
+#api-key-feedback {
+    font-size: 12px;
+    margin: 6px 0 0 0;
+    height: 1em; /* Reserve space to prevent layout shift */
+    color: var(--primary-color);
+}

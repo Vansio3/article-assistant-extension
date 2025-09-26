@@ -144,6 +144,15 @@
                 <button id="close-settings-btn" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
+                <!-- NEW: API Key Input Section -->
+                <div class="setting-item">
+                    <label for="api-key-input">Gemini API Key</label>
+                    <div class="api-key-control">
+                        <input type="password" id="api-key-input" placeholder="Enter your API key here">
+                        <button id="save-api-key-btn">Save</button>
+                    </div>
+                    <p id="api-key-feedback"></p>
+                </div>
                 <div class="setting-item">
                     <label>Theme</label>
                     <div class="theme-selector">
