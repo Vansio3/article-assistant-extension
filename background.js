@@ -129,12 +129,19 @@ async function startSummarization(tab) {
   // --- API Key Check happens after window creation ---
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
 
-  // --- Check for selected text ---
+  // --- Check for selected text in ALL FRAMES ---
   chrome.scripting.executeScript({
-    target: { tabId: tab.id },
+    target: { tabId: tab.id, allFrames: true },
     func: () => window.getSelection().toString().trim(),
   }, async (injectionResults) => {
-    const selectedText = (injectionResults && injectionResults[0] && injectionResults[0].result) ? injectionResults[0].result : '';
+    let selectedText = '';
+    // Find the first result from any frame that actually has selected text
+    if (injectionResults) {
+        const resultWithText = injectionResults.find(frameResult => frameResult.result);
+        if (resultWithText) {
+            selectedText = resultWithText.result;
+        }
+    }
 
     // Always check for API key first
     if (!geminiApiKey) {
@@ -144,7 +151,7 @@ async function startSummarization(tab) {
     }
 
     if (selectedText) {
-      console.log("Background: Detected selected text.");
+      console.log("Background: Detected selected text in a frame.");
       setTimeout(() => {
         chrome.runtime.sendMessage({
           action: "showSelectionPrompt",
@@ -156,7 +163,7 @@ async function startSummarization(tab) {
         });
       }, 250); // Wait for popup to be ready
     } else {
-      console.log("Background: No text selected. Proceeding with full page summarization.");
+      console.log("Background: No text selected in any frame. Proceeding with full page summarization.");
       injectContentScripts(tab);
     }
   });
