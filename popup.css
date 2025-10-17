@@ -97,7 +97,7 @@ body {
 #summary-mode-content.active,
 #chat-mode-content.active,
 #fact-check-mode-content.active {
-    display: flex; /* Use flex for consistent vertical alignment */
+    display: flex; 
     flex-direction: column;
 }
 
@@ -121,7 +121,7 @@ body {
 
 .mode-btn {
     flex-grow: 1;
-    flex-basis: 0; /* Ensures buttons share space equally */
+    flex-basis: 0; 
     border: none;
     background-color: transparent;
     color: var(--text-color);
@@ -141,7 +141,7 @@ body {
     position: absolute;
     top: 4px;
     left: 4px;
-    width: calc(33.333% - 4px); /* Adjusted for three buttons */
+    width: calc(33.333% - 4px); 
     height: calc(100% - 8px);
     background-color: var(--primary-color);
     border-radius: 9px;
@@ -160,10 +160,9 @@ body {
     text-align: center;
     height: 100%;
     justify-content: center;
-    flex-grow: 1; /* Allows view to fill space */
+    flex-grow: 1; 
 }
 
-/* NEW: Ensures the view containers fill the available space */
 #content-container,
 #fact-check-container {
     display: flex;
@@ -171,16 +170,15 @@ body {
     flex-grow: 1;
 }
 
-/* This section handles displaying the correct view based on the parent's class */
 #content-container.welcome .welcome-view,
 #content-container.loading .loading-view,
 #content-container.summary .summary-view,
 #content-container.error .error-view,
 #content-container.api-key-required .api-key-view,
-#content-container.selection-prompt .selection-prompt-view, /* ADDED */
+#content-container.selection-prompt .selection-prompt-view, 
 #fact-check-container.welcome .welcome-view,
 #fact-check-container.loading .loading-view,
-#fact-check-container.summary .summary-view, /* Re-use summary-view for the report */
+#fact-check-container.summary .summary-view, 
 #fact-check-container.error .error-view {
     display: flex;
 }
@@ -198,7 +196,7 @@ body {
 .summary-view {
     align-items: flex-start;
     text-align: left;
-    justify-content: flex-start; /* Overrides center alignment for content views */
+    justify-content: flex-start; 
     width: 100%;
 }
 
@@ -256,8 +254,8 @@ body {
     color: var(--message-assistant-text);
     border-bottom-left-radius: 4px;
     align-self: flex-start;
-    position: relative; /* Anchor for the read-aloud button */
-    padding-bottom: 12px; /* Ensure space below content */
+    position: relative; 
+    padding-bottom: 12px; 
 }
 .system-message {
     text-align: center;
@@ -338,26 +336,36 @@ body {
 .size-control-button:hover { background-color: var(--icon-bg); }
 #chat-form { display: flex; gap: 8px; width: 100%; align-items: center; }
 
-#chat-input {
-    flex-grow: 1;
+.textarea-wrapper {
+    flex-grow: 1; 
+    position: relative;
     border: 1px solid var(--border-color);
     background-color: var(--background-color);
-    border-radius: 20px;
+    border-radius: 20px; 
+    overflow: hidden;  
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+#chat-input {
     padding: 8px 16px;
     font-size: 14px;
     color: var(--text-color);
-    transition: border-color var(--transition-fast), background-color var(--transition-fast);
     resize: none;
     line-height: 1.5;
     max-height: 120px;
     font-family: var(--font-family);
     overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box; 
+    border: none;
+    background-color: transparent;
+    transition: none;
 }
-
-#chat-input:focus {
-    outline: none;
+.textarea-wrapper:focus-within {
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
+}
+#chat-input:focus {
+    outline: none; 
 }
 #chat-send-btn {
     background-color: var(--primary-color);
@@ -430,7 +438,6 @@ body[data-theme="amber"] #internet-toggle-btn img {
 #read-aloud-btn.reading .stop-icon { display: block; }
 .right-controls { display: flex; gap: 8px; align-items: center; }
 
-/* NEW: In-Chat Read Aloud Button */
 .chat-read-aloud-btn {
     position: absolute;
     bottom: -2px;
@@ -545,7 +552,7 @@ body[data-theme="amber"] .chat-read-aloud-btn img {
 #summary-text a:hover, .message.assistant a:hover, #fact-check-report-text a:hover { text-decoration: underline; }
 #summary-text code, .message.assistant code, #fact-check-report-text code { background-color: var(--icon-bg); padding: 0.2em 0.4em; font-size: 85%; border-radius: 6px; }
 #summary-text blockquote, .message.assistant blockquote, #fact-check-report-text blockquote { padding: 0 1em; color: var(--text-color); opacity: 0.8; border-left: 0.25em solid var(--border-color); }
-/* Specific styling for the API key view link */
+
 .api-key-view a { color: var(--primary-color); text-decoration: none; }
 .api-key-view a:hover { text-decoration: underline; }
 
@@ -582,6 +589,6 @@ body[data-theme="amber"] .chat-read-aloud-btn img {
 #api-key-feedback {
     font-size: 12px;
     margin: 6px 0 0 0;
-    height: 1em; /* Reserve space to prevent layout shift */
+    height: 1em;
     color: var(--primary-color);
 }
