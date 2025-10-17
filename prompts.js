@@ -18,6 +18,7 @@ export function getSummarizePrompt(title, content) {
 3.  Format the output using Markdown (e.g., a main heading for the title, bold text for emphasis, and bullet points for key takeaways if appropriate).
 4.  **Crucially:** Do not write any preamble or introductory phrases like "Here is the summary...". Your response must begin directly with the summary content itself.
 5.  **Formatting:** Ensure the output is compact. Use single blank lines between paragraphs and headings. Avoid excessive vertical whitespace.
+6.  **URL Constraint:** **Do not include any URLs or web links in your final summary.**
 
 **Article to Summarize:**
 <article>
@@ -55,6 +56,7 @@ Based only on the article's content, you can:
 
 **Output Format:**
 Format all your responses using Markdown.
+**Crucially: Do not include any URLs or web links in your final answer.**
 
 **Source Article:**
 <article>
@@ -83,6 +85,7 @@ export function getHybridChatSystemPrompt(title, content) {
 
 **Output Format:**
 Format all your responses using Markdown.
+**Crucially: Do not include any URLs or web links in your final answer.**
 
 **Source Article:**
 <article>
