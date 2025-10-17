@@ -414,7 +414,9 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.classList.add('message', role);
 
         if (role === 'assistant') {
-            messageDiv.innerHTML = marked.parse(text);
+            const parsedChatHtml = marked.parse(text);
+            const cleanChatHtml = DOMPurify.sanitize(parsedChatHtml);
+            messageDiv.innerHTML = cleanChatHtml;
             const plainText = messageDiv.textContent || ''; 
 
             const readBtn = document.createElement('button');
@@ -443,9 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'summary':
                 summaryTextContent = data.summary;
                 const parsedHtml = marked.parse(data.summary);
-                summaryTextEl.innerHTML = parsedHtml;
+                const cleanSummaryHtml = DOMPurify.sanitize(parsedHtml);
+                summaryTextEl.innerHTML = cleanSummaryHtml;
                 const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = parsedHtml;
+                tempDiv.innerHTML = cleanSummaryHtml;
                 summaryPlainText = tempDiv.textContent || tempDiv.innerText || '';
                 copyButton.disabled = false;
                 break;
@@ -551,7 +554,9 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'displayFactCheckReport':
                 isFactCheckRunning = false;
                 factCheckReportContent = request.report;
-                factCheckReportTextEl.innerHTML = marked.parse(request.report);
+                const parsedReportHtml = marked.parse(request.report);
+                const cleanReportHtml = DOMPurify.sanitize(parsedReportHtml);
+                factCheckReportTextEl.innerHTML = cleanReportHtml;
                 const links = factCheckReportTextEl.querySelectorAll('a');
                 links.forEach(link => {link.target = '_blank';link.rel = 'noopener noreferrer';});
                 factCheckContainer.className = 'summary';

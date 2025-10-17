@@ -39,7 +39,8 @@
         "icons/*",
         "lib/marked.min.js",
         "lib/pdf.js",
-        "lib/pdf.worker.js"
+        "lib/pdf.worker.js",
+        "lib/purify.min.js"
       ],
       "matches": ["<all_urls>"]
     }
