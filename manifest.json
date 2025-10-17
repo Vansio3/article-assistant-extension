@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Article Assistant",
-  "version": "1.5",
+  "version": "1.0",
   "description": "Summarizes articles, PDFs, and video transcripts using the Gemini API.",
   "permissions": [
     "activeTab",
