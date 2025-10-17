@@ -337,6 +337,7 @@ body {
 }
 .size-control-button:hover { background-color: var(--icon-bg); }
 #chat-form { display: flex; gap: 8px; width: 100%; align-items: center; }
+
 #chat-input {
     flex-grow: 1;
     border: 1px solid var(--border-color);
@@ -348,10 +349,11 @@ body {
     transition: border-color var(--transition-fast), background-color var(--transition-fast);
     resize: none;
     line-height: 1.5;
-    max-height: 120px; 
+    max-height: 120px;
     font-family: var(--font-family);
-    overflow-y: auto; 
+    overflow-y: auto;
 }
+
 #chat-input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -398,10 +400,27 @@ body[data-theme="amber"] #internet-toggle-btn img {
 #internet-toggle-btn.active img { opacity: 1; }
 
 /* 7. Themed Scrollbar Styling */
-.mode-content::-webkit-scrollbar { width: 8px; }
-.mode-content::-webkit-scrollbar-track { background: transparent; }
-.mode-content::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 4px; }
-.mode-content::-webkit-scrollbar-thumb:hover { background-color: var(--icon-bg); }
+.mode-content::-webkit-scrollbar,
+#chat-input::-webkit-scrollbar {
+    width: 8px;
+}
+
+.mode-content::-webkit-scrollbar-track,
+#chat-input::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.mode-content::-webkit-scrollbar-thumb,
+#chat-input::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+.mode-content::-webkit-scrollbar-thumb:hover,
+#chat-input::-webkit-scrollbar-thumb:hover {
+    background-color: var(--icon-bg);
+}
+
 
 /* 8. Read Aloud Button Icon Styling */
 #read-aloud-btn { display: flex; align-items: center; justify-content: center; }
