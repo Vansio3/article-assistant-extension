@@ -207,7 +207,7 @@ async function summarizeWithGemini(article) {
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
   const apiKey = geminiApiKey;
   const modelName = config.GEMINI_MODEL;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
   if (!apiKey) {
      chrome.runtime.sendMessage({ action: "displayError", title: "Configuration Error", message: "API key not set. Please add it in the settings." });
@@ -218,7 +218,10 @@ async function summarizeWithGemini(article) {
     const prompt = getSummarizePrompt(article.title, article.content);
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey 
+      },
       body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
     });
     const data = await response.json();
@@ -251,7 +254,7 @@ async function chatWithGemini(history, internetAccessEnabled) {
   }
   
   const modelName = config.GEMINI_MODEL;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
   
   let systemPrompt;
   let initialModelResponse;
@@ -281,7 +284,10 @@ async function chatWithGemini(history, internetAccessEnabled) {
   try {
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey 
+      },
       body: JSON.stringify(requestBody)
     });
     const data = await response.json();
@@ -312,7 +318,7 @@ async function factCheckWithGemini() {
   }
 
   const modelName = config.GEMINI_FACT_CHECK_MODEL;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
   try {
     const prompt = getGeneralFactCheckPrompt(currentArticle.title, currentArticle.content, currentArticle.url);
@@ -323,7 +329,10 @@ async function factCheckWithGemini() {
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
       body: JSON.stringify(requestBody)
     });
 
