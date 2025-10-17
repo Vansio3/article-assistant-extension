@@ -346,6 +346,11 @@ body {
     font-size: 14px;
     color: var(--text-color);
     transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    resize: none;
+    line-height: 1.5;
+    max-height: 120px; 
+    font-family: var(--font-family);
+    overflow-y: auto; 
 }
 #chat-input:focus {
     outline: none;

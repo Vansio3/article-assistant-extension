@@ -211,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // MODIFIED: This function now disarms listeners on BOTH trackers.
     function stopReading() {
         speechQueue = [];
         currentSpeechIndex = 0;
@@ -231,7 +230,6 @@ document.addEventListener('DOMContentLoaded', () => {
         resetAllReadingStates();
     }
 
-    // MODIFIED: This function now tracks the utterance it creates.
     function playNextChunk() {
         if (currentSpeechIndex >= speechQueue.length) {
             resetAllReadingStates();
@@ -316,12 +314,18 @@ document.addEventListener('DOMContentLoaded', () => {
     chatModeBtn.addEventListener('click', () => switchMode('chat'));
     factCheckModeBtn.addEventListener('click', () => switchMode('fact-check'));
 
+    function autoResizeTextarea() {
+        chatInput.style.height = '0';
+        chatInput.style.height = `${chatInput.scrollHeight}px`;
+    }
+
     function handleChatSubmit(userInput) {
         if (!userInput) return;
         conversationHistory.push({ role: 'user', parts: [{ text: userInput }] });
         appendMessage('user', userInput);
         chatInput.value = '';
         chatSendBtn.disabled = true;
+        autoResizeTextarea(); 
         showTypingIndicator(true);
         chrome.runtime.sendMessage({
             action: 'chatWithPage',
@@ -417,6 +421,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const parsedChatHtml = marked.parse(text);
             const cleanChatHtml = DOMPurify.sanitize(parsedChatHtml);
             messageDiv.innerHTML = cleanChatHtml;
+
             const plainText = messageDiv.textContent || ''; 
 
             const readBtn = document.createElement('button');
@@ -437,7 +442,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showTypingIndicator(show) { typingIndicator.style.display = show ? 'inline-flex' : 'none'; if (show) chatHistoryEl.parentElement.scrollTop = chatHistoryEl.parentElement.scrollHeight; }
-    chatInput.addEventListener('input', () => { chatSendBtn.disabled = chatInput.value.trim().length === 0; });
+    
+    chatInput.addEventListener('input', () => { 
+        chatSendBtn.disabled = chatInput.value.trim().length === 0;
+        autoResizeTextarea();
+    });
+
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!chatSendBtn.disabled) {
+                chatForm.requestSubmit();
+            }
+        }
+    });
 
     function setSummaryState(state, data = {}) {
         contentContainer.className = state;
@@ -447,6 +465,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const parsedHtml = marked.parse(data.summary);
                 const cleanSummaryHtml = DOMPurify.sanitize(parsedHtml);
                 summaryTextEl.innerHTML = cleanSummaryHtml;
+                
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = cleanSummaryHtml;
                 summaryPlainText = tempDiv.textContent || tempDiv.innerText || '';
@@ -554,9 +573,11 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'displayFactCheckReport':
                 isFactCheckRunning = false;
                 factCheckReportContent = request.report;
+                
                 const parsedReportHtml = marked.parse(request.report);
                 const cleanReportHtml = DOMPurify.sanitize(parsedReportHtml);
                 factCheckReportTextEl.innerHTML = cleanReportHtml;
+
                 const links = factCheckReportTextEl.querySelectorAll('a');
                 links.forEach(link => {link.target = '_blank';link.rel = 'noopener noreferrer';});
                 factCheckContainer.className = 'summary';
