@@ -105,6 +105,18 @@
                     url: document.location.href
                 }
             });
+
+            // --- Attempt to close the transcript panel ---
+            try {
+                const closeButton = document.querySelector('button[aria-label="Close transcript"]');
+                if (closeButton) {
+                    console.log("YouTube ContentScript: Closing transcript panel.");
+                    closeButton.click();
+                }
+            } catch (closeError) {
+                console.warn("YouTube ContentScript: Could not close transcript panel.", closeError);
+            }
+            
         } else {
             throw new Error("Transcript panel was opened, but no text could be extracted from it.");
         }
