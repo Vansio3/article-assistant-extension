@@ -311,7 +311,7 @@ async function factCheckWithGemini() {
     return;
   }
 
-  const modelName = config.GEMINI_MODEL;
+  const modelName = config.GEMINI_FACT_CHECK_MODEL;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
   try {
