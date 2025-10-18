@@ -15,7 +15,6 @@ chrome.windows.onRemoved.addListener((windowId) => {
     }
 });
 
-// Sends a message to the side panel, retrying if the panel is not yet ready.
 function showLoadingScreen() {
   let retries = 0;
   const maxRetries = 10;
@@ -27,16 +26,15 @@ function showLoadingScreen() {
     chrome.runtime.sendMessage({ action: "showLoading" }, (response) => {
       if (chrome.runtime.lastError) {
         retries++;
-        setTimeout(attempt, 100); // Retry after 100ms
+        setTimeout(attempt, 100);
       }
     });
   };
   attempt();
 }
 
-// Helper function to inject the content scripts for a full-page summary
 function injectContentScripts(tab) {
-    showLoadingScreen(); // Show loading screen before injection
+    showLoadingScreen(); 
 
     const scriptConfig = getContentScriptForUrl(tab.url);
     console.log(`Background: Detected content type: ${scriptConfig.reason}. Injecting scripts:`, scriptConfig.files);
@@ -61,8 +59,6 @@ function injectContentScripts(tab) {
     });
 }
 
-
-// NEW: Helper function to determine which content script to use
 function getContentScriptForUrl(url) {
   if (url.includes('youtube.com/watch')) {
     return {
@@ -72,43 +68,34 @@ function getContentScriptForUrl(url) {
   }
   if (url.endsWith('.pdf')) {
     return {
-      files: ['content_pdf.js'], // pdf.js is imported inside the script
+      files: ['content_pdf.js'],
       reason: 'PDF'
     };
   }
-  // Default for standard web articles
   return {
     files: ['lib/Readability.js', 'content.js'],
     reason: 'Article'
   };
 }
 
-// MODIFIED: This function now checks for selected text first
 async function startSummarization(tab) {
-  // --- FIX: Store the tab where the action was initiated ---
   await chrome.storage.session.set({ activeUserTab: tab });
 
-  // Clear any previous article from session storage to start fresh.
   chrome.storage.session.set({ currentArticle: null });
   console.log(`Background: Starting process for tab ${tab.id}.`);
 
   const createOrFocusWindow = async () => {
     const popupUrl = chrome.runtime.getURL('popup.html');
     
-    // In Manifest V3, this function returns a promise if you don't use a callback.
-    // We query for all open popup windows to make the search efficient.
     const windows = await chrome.windows.getAll({ populate: true, windowTypes: ['popup'] });
-
     const existingPopup = windows.find(w => w.tabs && w.tabs[0]?.url === popupUrl);
 
     if (existingPopup) {
         console.log(`Background: Found existing popup window with ID: ${existingPopup.id}. Focusing.`);
-        // Update the global ID just in case it's out of sync
         popupWindowId = existingPopup.id;
         await chrome.windows.update(existingPopup.id, { focused: true });
     } else {
         console.log("Background: No active popup found. Creating a new window.");
-        // This function already handles creating the window and setting the ID
         createPopupWindow(); 
     }
   };
@@ -126,16 +113,13 @@ async function startSummarization(tab) {
 
   createOrFocusWindow();
 
-  // --- API Key Check happens after window creation ---
   const { geminiApiKey } = await chrome.storage.local.get('geminiApiKey');
 
-  // --- Check for selected text in ALL FRAMES ---
   chrome.scripting.executeScript({
     target: { tabId: tab.id, allFrames: true },
     func: () => window.getSelection().toString().trim(),
   }, async (injectionResults) => {
     let selectedText = '';
-    // Find the first result from any frame that actually has selected text
     if (injectionResults) {
         const resultWithText = injectionResults.find(frameResult => frameResult.result);
         if (resultWithText) {
@@ -143,7 +127,6 @@ async function startSummarization(tab) {
         }
     }
 
-    // Always check for API key first
     if (!geminiApiKey) {
         console.log("Background: Gemini API key not found.");
         setTimeout(() => chrome.runtime.sendMessage({ action: "apiKeyRequired" }), 250);
@@ -161,7 +144,7 @@ async function startSummarization(tab) {
             url: tab.url
           }
         });
-      }, 250); // Wait for popup to be ready
+      }, 250);
     } else {
       console.log("Background: No text selected in any frame. Proceeding with full page summarization.");
       injectContentScripts(tab);
@@ -176,10 +159,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     chrome.storage.session.set({ currentArticle: request.article }, () => {
         summarizeWithGemini(request.article);
     });
-    // return true; // REMOVED
   } else if (request.action === "summarizeFullPage") {
     console.log("Background: User chose to summarize the full page.");
-    // --- FIX: Retrieve the correct tab from session storage ---
     chrome.storage.session.get('activeUserTab', (result) => {
         const targetTab = result.activeUserTab;
         if (targetTab && targetTab.id) {
@@ -193,13 +174,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
         }
     });
-    // return true; // REMOVED
   } else if (request.action === "chatWithPage") {
     chatWithGemini(request.history, request.internetAccess);
-    // return true; // REMOVED
   } else if (request.action === "factCheckArticle") {
     factCheckWithGemini();
-    // return true; // REMOVED
   }
 });
 
@@ -225,10 +203,18 @@ async function summarizeWithGemini(article) {
       body: JSON.stringify({ "contents": [{ "parts": [{ "text": prompt }] }] })
     });
     const data = await response.json();
-    if (!response.ok || !data.candidates) {
-        throw new Error(data?.error?.message || "Invalid API response.");
+    if (data.error) {
+        throw new Error(data.error.message || "An unknown API error occurred.");
     }
-    const summary = data.candidates[0].content.parts[0].text;
+    const summary = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!summary) {
+        const finishReason = data?.candidates?.[0]?.finishReason;
+        if (finishReason === 'SAFETY') {
+            throw new Error("The summary was blocked due to safety settings. The content may be sensitive.");
+        }
+        throw new Error("Could not parse a valid summary from the API response.");
+    }
     chrome.runtime.sendMessage({ action: "displaySummary", summary: summary });
   } catch (error) {
     console.error("Background: Summarize API failed.", error);
@@ -291,10 +277,24 @@ async function chatWithGemini(history, internetAccessEnabled) {
       body: JSON.stringify(requestBody)
     });
     const data = await response.json();
-    if (!response.ok || !data.candidates) {
-        throw new Error(data?.error?.message || "Invalid API response.");
+    if (data.error) {
+        throw new Error(data.error.message || "An unknown API error occurred.");
     }
-    const chatResponse = data.candidates[0].content.parts[0].text;
+    
+    const responsePart = data?.candidates?.[0]?.content?.parts?.find(p => p.text);
+    const chatResponse = responsePart?.text;
+
+    if (!chatResponse) {
+        const finishReason = data?.candidates?.[0]?.finishReason;
+        if (finishReason === 'SAFETY') {
+            throw new Error("The response was blocked due to safety settings.");
+        }
+        const hasToolCall = data?.candidates?.[0]?.content?.parts?.some(p => p.googleSearch);
+        if (hasToolCall) {
+            throw new Error("The model used a tool but did not provide a text response.");
+        }
+        throw new Error("Could not parse a valid chat response from the API.");
+    }
     chrome.runtime.sendMessage({ action: "displayChatResponse", message: chatResponse });
   } catch (error) {
     console.error("Background: Chat API failed.", error);
@@ -337,11 +337,19 @@ async function factCheckWithGemini() {
     });
 
     const data = await response.json();
-    if (!response.ok || !data.candidates) {
-        throw new Error(data?.error?.message || "Invalid API response.");
+    if (data.error) {
+        throw new Error(data.error.message || "An unknown API error occurred.");
     }
     
-    const report = data.candidates[0].content.parts[0].text;
+    const report = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!report) {
+        const finishReason = data?.candidates?.[0]?.finishReason;
+        if (finishReason === 'SAFETY') {
+            throw new Error("The report was blocked due to safety settings. The content may be sensitive.");
+        }
+        throw new Error("Could not parse a valid fact-check report from the API response.");
+    }    
     chrome.runtime.sendMessage({ action: "displayFactCheckReport", report: report });
 
   } catch (error) {
