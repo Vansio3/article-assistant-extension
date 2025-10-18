@@ -671,3 +671,14 @@ body[data-theme="light"] .theme-btn.active {
     height: 1em;
     color: var(--primary-color);
 }
+
+/* 13. Styles moved from HTML */
+.api-key-view p {
+    text-align: left;
+    max-width: 350px;
+}
+
+#deep-search-feedback {
+    display: none;
+    margin-left: 12px;
+}
