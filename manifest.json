@@ -3,6 +3,7 @@
   "name": "Article Assistant",
   "version": "1.0",
   "description": "Summarizes articles, PDFs, and video transcripts using the Gemini API.",
+  "homepage_url": "https://sites.google.com/view/article-assist-privacy-policy",
   "permissions": [
     "activeTab",
     "scripting",
