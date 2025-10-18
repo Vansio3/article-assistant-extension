@@ -4,8 +4,11 @@ import { getSummarizePrompt, getChatSystemPrompt, getHybridChatSystemPrompt, get
 
 let popupWindowId = null;
 
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("Background: Extension installed.");
+chrome.runtime.onInstalled.addListener((details) => {
+  if (details.reason === 'install') {
+    chrome.tabs.create({ url: 'welcome.html' });
+  }
+  console.log("Background: Extension installed or updated.");
 });
 
 chrome.windows.onRemoved.addListener((windowId) => {
