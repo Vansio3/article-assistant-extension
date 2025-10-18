@@ -51,7 +51,6 @@
         try {
             const descriptionButton = document.querySelector('ytd-video-description-transcript-section-renderer button');
             if (descriptionButton) {
-                console.log("YouTube ContentScript: Strategy 1 - Found description button. Clicking.");
                 descriptionButton.click();
                 transcriptOpened = true;
             }
@@ -73,7 +72,6 @@
                 );
 
                 if (showTranscriptMenuItem) {
-                    console.log("YouTube ContentScript: Strategy 2 - Found transcript option in menu. Clicking.");
                     showTranscriptMenuItem.click();
                     transcriptOpened = true;
                 } else {
@@ -110,7 +108,6 @@
             try {
                 const closeButton = document.querySelector('button[aria-label="Close transcript"]');
                 if (closeButton) {
-                    console.log("YouTube ContentScript: Closing transcript panel.");
                     closeButton.click();
                 }
             } catch (closeError) {

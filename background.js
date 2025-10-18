@@ -8,12 +8,10 @@ chrome.runtime.onInstalled.addListener((details) => {
   if (details.reason === 'install') {
     chrome.tabs.create({ url: 'welcome.html' });
   }
-  console.log("Background: Extension installed or updated.");
 });
 
 chrome.windows.onRemoved.addListener((windowId) => {
     if (windowId === popupWindowId) {
-        console.log("Background: Popup window closed.");
         popupWindowId = null;
     }
 });
@@ -40,7 +38,6 @@ function injectContentScripts(tab) {
     showLoadingScreen(); 
 
     const scriptConfig = getContentScriptForUrl(tab.url);
-    console.log(`Background: Detected content type: ${scriptConfig.reason}. Injecting scripts:`, scriptConfig.files);
 
     chrome.scripting.executeScript({
         target: { tabId: tab.id },
@@ -49,7 +46,6 @@ function injectContentScripts(tab) {
         if (chrome.runtime.lastError) {
             if (chrome.runtime.lastError.message.includes("Frame with ID 0 was removed") ||
                 chrome.runtime.lastError.message.includes("No tab with id")) {
-                console.log("Background: Script injection cancelled because target tab was closed.");
             } else {
                 console.error("Background: Error injecting script:", chrome.runtime.lastError.message);
                 chrome.runtime.sendMessage({
@@ -85,7 +81,6 @@ async function startSummarization(tab) {
   await chrome.storage.session.set({ activeUserTab: tab });
 
   chrome.storage.session.set({ currentArticle: null });
-  console.log(`Background: Starting process for tab ${tab.id}.`);
 
   const createOrFocusWindow = async () => {
     const popupUrl = chrome.runtime.getURL('popup.html');
@@ -94,11 +89,9 @@ async function startSummarization(tab) {
     const existingPopup = windows.find(w => w.tabs && w.tabs[0]?.url === popupUrl);
 
     if (existingPopup) {
-        console.log(`Background: Found existing popup window with ID: ${existingPopup.id}. Focusing.`);
         popupWindowId = existingPopup.id;
         await chrome.windows.update(existingPopup.id, { focused: true });
     } else {
-        console.log("Background: No active popup found. Creating a new window.");
         createPopupWindow(); 
     }
   };
@@ -131,13 +124,11 @@ async function startSummarization(tab) {
     }
 
     if (!geminiApiKey) {
-        console.log("Background: Gemini API key not found.");
         setTimeout(() => chrome.runtime.sendMessage({ action: "apiKeyRequired" }), 250);
         return;
     }
 
     if (selectedText) {
-      console.log("Background: Detected selected text in a frame.");
       setTimeout(() => {
         chrome.runtime.sendMessage({
           action: "showSelectionPrompt",
@@ -149,7 +140,6 @@ async function startSummarization(tab) {
         });
       }, 250);
     } else {
-      console.log("Background: No text selected in any frame. Proceeding with full page summarization.");
       injectContentScripts(tab);
     }
   });
@@ -163,7 +153,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         summarizeWithGemini(request.article);
     });
   } else if (request.action === "summarizeFullPage") {
-    console.log("Background: User chose to summarize the full page.");
     chrome.storage.session.get('activeUserTab', (result) => {
         const targetTab = result.activeUserTab;
         if (targetTab && targetTab.id) {

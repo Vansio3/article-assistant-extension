@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Article Assistant",
   "version": "1.0",
-  "description": "Summarizes articles, PDFs, and video transcripts using the Gemini API.",
+  "description": "Your AI assistant for the web. Get instant summaries of articles, PDFs & YouTube videos. Chat with content and fact-check claims in one click.",
   "homepage_url": "https://sites.google.com/view/article-assist-privacy-policy",
   "permissions": [
     "activeTab",
